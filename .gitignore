@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Outputs & runtime artifacts
+outputs/
+tasks/
+logs/
+*.jsonl
+cookies.json
+
+# Node
+node_modules/
+
+# macOS
+.DS_Store
+
+# Env
+.env

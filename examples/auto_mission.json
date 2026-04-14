@@ -1,0 +1,11 @@
+{
+  "mission_name": "auto_mission",
+  "start_url": "https://www.bing.com",
+  "stages": [
+    {
+      "name": "main",
+      "goal": "research the latest news about deepseek and summarize in 5 bullet points",
+      "max_steps": 20
+    }
+  ]
+}

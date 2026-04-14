@@ -1,0 +1,6 @@
+playwright
+requests
+fastapi
+uvicorn
+httpx
+psutil
