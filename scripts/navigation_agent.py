@@ -11,7 +11,6 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import Any
 
 # ── repo root on sys.path ─────────────────────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent.parent
@@ -19,7 +18,6 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.ollama_client import (
     MODEL_ACTOR,
-    MODEL_ANALYST,
     MODEL_HEAVY,
     MODEL_PLANNER,
     call,
@@ -401,7 +399,10 @@ def main() -> None:
             if done:
                 break
 
-        clusters = cluster_claims(memory.evidence) if memory.evidence else []
+        # always defined — empty list if no evidence was collected
+        clusters       = cluster_claims(memory.evidence) if memory.evidence else []
+        contradictions = [c for c in clusters if _has_contradiction(c)]
+
         if clusters:
             log.log("clusters", cluster_count=len(clusters), final=True,
                     clusters=[{
@@ -410,7 +411,6 @@ def main() -> None:
                         "domains": c.get("domains", [])
                     } for c in clusters[:15]])
 
-        contradictions = [c for c in clusters if _has_contradiction(c)]
         if contradictions:
             log.log("contradictions", count=len(contradictions),
                     items=[{"claim": c["representative_claim"][:120],
