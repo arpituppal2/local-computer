@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-open http://localhost:8765
+open "http://127.0.0.1:8765"

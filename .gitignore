@@ -1,26 +1,18 @@
-# Python
 .venv/
+outputs/
+logs/
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
+.DS_Store
 *.egg-info/
 dist/
 build/
-
-# Outputs & runtime artifacts
-outputs/
-tasks/
-logs/
-*.jsonl
-cookies.json
-
-# Node
-node_modules/
-
-# macOS
-.DS_Store
-
-# Env
 .env
+agent_events.jsonl
+auto_mission.json
+browser_steps.json
+*.png
+*.jpg
+*.jpeg
+node_modules/

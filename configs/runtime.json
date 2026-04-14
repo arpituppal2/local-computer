@@ -1,0 +1,9 @@
+{
+  "max_steps_per_stage": 25,
+  "max_stages": 5,
+  "browser": "arc",
+  "arc_debug_port": 9222,
+  "dashboard_port": 8765,
+  "outputs_dir": "outputs",
+  "logs_dir": "logs"
+}
