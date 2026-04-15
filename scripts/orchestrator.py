@@ -74,3 +74,38 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+from scripts.task_schema import Task
+import json
+import uuid
+
+def build_tasks(goal: str, planner_llm):
+    prompt = f"""
+Break this goal into structured browser automation tasks:
+
+GOAL:
+{goal}
+
+Return JSON:
+[
+  {{
+    "goal": "...",
+    "steps": ["..."]
+  }}
+]
+"""
+
+    raw = planner_llm(prompt)
+
+    tasks_json = json.loads(raw)
+
+    tasks = []
+    for t in tasks_json:
+        tasks.append(Task(
+            id=str(uuid.uuid4()),
+            goal=t["goal"],
+            steps=[{"action": s} for s in t["steps"]]
+        ))
+
+    return tasks
