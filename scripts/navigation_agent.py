@@ -25,7 +25,8 @@ from scripts.ollama_client import (
 )
 from scripts.observer import read as observe
 from scripts.executor import execute
-from scripts.agent_memory import Memory
+from playwright.sync_api import sync_playwright
+from scripts.memory import Memory
 from scripts.event_logger import EventLogger
 from scripts.claim_extractor import extract_claims
 from scripts.source_scoring import score_source, domain_of
