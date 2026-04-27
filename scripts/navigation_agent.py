@@ -34,8 +34,7 @@ from scripts.claim_cluster import cluster_claims
 from scripts.long_term_memory import (
     should_read,
     read_relevant,
-    should_write,
-    write_entry,
+    manage_memory,
 )
 
 # ── runtime config ─────────────────────────────────────────────────────────
@@ -53,7 +52,7 @@ STUCK_THRESHOLD = 3
 EVIDENCE_GOAL_BASE = 6
 
 
-# ── adaptive evidence goal ────────────────────────────────────────────────
+# ── adaptive evidence goal ─────────────────────────────────────────────────
 def adaptive_evidence_goal(memory: Memory) -> int:
     base = EVIDENCE_GOAL_BASE
     bonus = len(set(e.get("source_domain", "") for e in memory.evidence))
@@ -81,11 +80,16 @@ def decide_action(goal: str, state: dict, memory: Memory, step: int) -> dict:
         for r in list(memory.recent_failures)[-4:]
     ]
 
+    # Surface prior context in the decision prompt if it exists
+    prior_block = ""
+    if memory.prior_context:
+        prior_block = f"\nPRIOR CONTEXT FROM MEMORY:\n{memory.prior_context[:800]}\n"
+
     prompt = f"""
 You are a research agent.
 
 GOAL: {goal}
-
+{prior_block}
 STATE:
 URL: {state.get('url')}
 TITLE: {state.get('title')}
@@ -219,12 +223,12 @@ def main():
     log = EventLogger(OUT_DIR)
     memory = Memory()
 
-    # ── long-term memory: read phase ────────────────────────────────
+    # ── long-term memory: read phase ──────────────────────────────────────
     if should_read(goal):
         prior = read_relevant(goal)
         if prior:
             log.log("ltm_read", chars=len(prior))
-            memory.inject_prior_context(prior)   # see memory.py
+            memory.inject_prior_context(prior)
 
     with sync_playwright() as p:
         browser, ctx, page, mode = get_browser_and_page(p)
@@ -249,10 +253,9 @@ def main():
         out = OUT_DIR / "result.md"
         out.write_text(result)
 
-        # ── long-term memory: write phase ───────────────────────────
-        if should_write(goal, result):
-            write_entry(goal, memory, result)
-            log.log("ltm_write", goal=goal)
+        # ── long-term memory: smart write phase ───────────────────────────
+        manage_memory(goal, memory, result)
+        log.log("ltm_manage_done", goal=goal)
 
         print(result)
 
