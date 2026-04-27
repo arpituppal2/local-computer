@@ -2,7 +2,6 @@
 set -euo pipefail
 
 AIDIR="$(cd "$(dirname "$0")" && pwd)"
-AIDIR="$AIDIR"
 
 # --- GPU / Ollama env (max out your 16GB unified memory) ---
 export OLLAMA_MAX_VRAM=14336
@@ -32,11 +31,40 @@ with sync_playwright() as p:
   playwright install chromium --with-deps 2>&1 | grep -v '^$' | tail -8
 fi
 
+# --- Ollama: start in a new terminal tab if not already running ---
+if ! ollama list >/dev/null 2>&1; then
+  echo "[setup] Ollama not running — launching in a new terminal tab..."
+  osascript \
+    -e 'tell application "Terminal"' \
+    -e '  if not (exists window 1) then reopen' \
+    -e '  activate' \
+    -e '  tell application "System Events" to keystroke "t" using command down' \
+    -e '  delay 0.4' \
+    -e "  do script \"echo '[ollama] starting...'; ollama serve\" in front window" \
+    -e 'end tell' 2>/dev/null || \
+  osascript \
+    -e 'tell application "iTerm2"' \
+    -e '  tell current window' \
+    -e '    create tab with default profile' \
+    -e "    tell current session to write text \"echo '[ollama] starting...'; ollama serve\"" \
+    -e '  end tell' \
+    -e 'end tell' 2>/dev/null || \
+  ( echo "[setup] Could not open terminal tab — starting ollama serve in background..."; ollama serve >/tmp/ollama.log 2>&1 & )
+
+  echo "[setup] Waiting for Ollama to be ready..."
+  for i in $(seq 1 20); do
+    ollama list >/dev/null 2>&1 && break
+    sleep 0.5
+  done
+  ollama list >/dev/null 2>&1 || { echo "[error] Ollama failed to start. Run 'ollama serve' manually."; exit 1; }
+  echo "[setup] Ollama is ready."
+fi
+
 # --- Ollama model check ---
 for MODEL in qwen3:4b qwen3:8b; do
   if ! ollama list 2>/dev/null | grep -q "$MODEL"; then
     echo "[setup] Pulling $MODEL (required)..."
-    ollama pull "$MODEL"
+    ollama pull "$MODEL" || echo "[warn] Could not pull $MODEL — continuing anyway."
   fi
 done
 if ! ollama list 2>/dev/null | grep -q "qwen3:14b"; then
