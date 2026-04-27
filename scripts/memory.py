@@ -1,42 +1,46 @@
-"""Unified Memory class — replaces both memory.py and agent_memory.py APIs (fixes #22-24)."""
+#!/usr/bin/env python3
+"""
+scripts/memory.py
+In-session working memory for the research agent.
+"""
 from __future__ import annotations
-import hashlib, time
+
 from collections import deque
+from typing import Any
+
 
 class Memory:
-    def __init__(self, max_history: int = 200):
-        self.history: deque = deque(maxlen=max_history)
-        self.visited_urls: set = set()
-        self.evidence: list = []
-        self.mode_steps: dict = {}
-        self._state_hashes: deque = deque(maxlen=20)
+    def __init__(self, maxlen: int = 50):
+        self.evidence: list[dict] = []
+        self.recent_actions: deque = deque(maxlen=maxlen)
+        self.recent_failures: deque = deque(maxlen=maxlen)
+        self._prior_context: str = ""
 
-    def record(self, action: str, url: str, result: str = ""):
-        self.record_action(action, url, result)
+    # ── evidence ────────────────────────────────────────────────────
+    def add_evidence(self, item: dict) -> None:
+        self.evidence.append(item)
 
-    def record_action(self, action: str, url: str, result: str = ""):
-        self.visited_urls.add(url)
-        entry = {"action": action, "url": url, "result": result, "ts": time.time()}
-        self.history.append(entry)
-        self.mode_steps[action] = self.mode_steps.get(action, 0) + 1
+    # ── actions ─────────────────────────────────────────────────────
+    def record_action(self, action: dict, result: dict) -> None:
+        entry = {"action": action, "result": result}
+        self.recent_actions.append(entry)
+        if not result.get("ok"):
+            self.recent_failures.append(entry)
 
-    def is_stuck(self) -> bool:
-        return self.stuck()
+    # ── long-term memory injection ──────────────────────────────────
+    def inject_prior_context(self, text: str) -> None:
+        """Store text retrieved from the long-term memory file."""
+        self._prior_context = text
 
-    def stuck(self) -> bool:
-        if len(self.history) < 4:
-            return False
-        recent = list(self.history)[-4:]
-        urls = [e.get("url", "") for e in recent]
-        return len(set(urls)) <= 1
+    @property
+    def prior_context(self) -> str:
+        return self._prior_context
 
-    def state_signature(self, url: str, text_snippet: str) -> str:
-        raw = f"{url}::{text_snippet[:200]}"
-        return hashlib.sha256(raw.encode()).hexdigest()[:16]
-
-    def is_repeated_state(self, url: str, text_snippet: str) -> bool:
-        sig = self.state_signature(url, text_snippet)
-        if sig in self._state_hashes:
-            return True
-        self._state_hashes.append(sig)
-        return False
+    # ── misc ─────────────────────────────────────────────────────────
+    def summary(self) -> dict[str, Any]:
+        return {
+            "evidence_count": len(self.evidence),
+            "action_count": len(self.recent_actions),
+            "failure_count": len(self.recent_failures),
+            "has_prior_context": bool(self._prior_context),
+        }

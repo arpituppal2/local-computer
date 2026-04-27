@@ -31,6 +31,12 @@ from scripts.event_logger import EventLogger
 from scripts.claim_extractor import extract_claims
 from scripts.source_scoring import score_source, domain_of
 from scripts.claim_cluster import cluster_claims
+from scripts.long_term_memory import (
+    should_read,
+    read_relevant,
+    should_write,
+    write_entry,
+)
 
 # ── runtime config ─────────────────────────────────────────────────────────
 RT_FILE = ROOT / "configs" / "runtime.json"
@@ -208,11 +214,17 @@ def get_browser_and_page(p):
 # ════════════════════════════════════════════════════════════════════════
 def main():
     mission = json.loads(Path(sys.argv[1]).read_text())
+    goal = mission.get("mission_name", "research")
 
     log = EventLogger(OUT_DIR)
     memory = Memory()
 
-    from playwright.sync_api import sync_playwright
+    # ── long-term memory: read phase ────────────────────────────────
+    if should_read(goal):
+        prior = read_relevant(goal)
+        if prior:
+            log.log("ltm_read", chars=len(prior))
+            memory.inject_prior_context(prior)   # see memory.py
 
     with sync_playwright() as p:
         browser, ctx, page, mode = get_browser_and_page(p)
@@ -220,7 +232,7 @@ def main():
         page.goto(mission.get("start_url", "https://bing.com"))
 
         for stage in mission.get("stages", []):
-            if run_stage(page, ctx, mission["mission_name"], stage, memory, log):
+            if run_stage(page, ctx, goal, stage, memory, log):
                 break
 
         clusters = cluster_claims(memory.evidence) if memory.evidence else []
@@ -236,6 +248,11 @@ def main():
         Path(OUT_DIR).mkdir(exist_ok=True)
         out = OUT_DIR / "result.md"
         out.write_text(result)
+
+        # ── long-term memory: write phase ───────────────────────────
+        if should_write(goal, result):
+            write_entry(goal, memory, result)
+            log.log("ltm_write", goal=goal)
 
         print(result)
 

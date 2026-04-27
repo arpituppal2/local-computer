@@ -1,0 +1,5 @@
+# local-computer long-term memory
+# Format: timestamped entries separated by ---
+# The agent reads and writes this file autonomously.
+# You can also edit it manually.
+---
