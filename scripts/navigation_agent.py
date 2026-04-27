@@ -23,7 +23,7 @@ from scripts.ollama_client import (
     call,
     call_json,
 )
-from scripts.observer import read as observe
+from scripts.observer import observe
 from scripts.executor import execute
 from playwright.sync_api import sync_playwright
 from scripts.memory import Memory
@@ -153,7 +153,7 @@ def process_page(state: dict, memory: Memory, log: EventLogger) -> int:
 
 def enough_evidence(memory: Memory) -> bool:
     """True when we have enough trusted, diverse evidence to stop."""
-    goal = adaptive_evidence_goal(memory)   # use same threshold everywhere
+    goal = adaptive_evidence_goal(memory)
     if len(memory.evidence) < goal:
         return False
 
@@ -212,7 +212,7 @@ def run_stage(page, context, goal: str, stage: dict, memory: Memory, log: EventL
         if not result.get("ok"):
             log.log("action_failed", action=action_type)
 
-        # Replace fixed sleep with an adaptive load wait (max 3 s)
+        # Adaptive load wait (max 3 s)
         try:
             page.wait_for_load_state("domcontentloaded", timeout=3000)
         except Exception:
@@ -231,12 +231,17 @@ def get_browser_and_page(p):
 
 
 # ════════════════════════════════════════════════════════════════════════
-# ENTRY
+# ENTRY (called by orchestrator)
 # ════════════════════════════════════════════════════════════════════════
-def main():
-    mission = json.loads(Path(sys.argv[1]).read_text())
-    goal    = mission.get("mission_name", "research")
+def run_mission(plan: dict, root: Path | None = None):
+    global OUT_DIR, LOG_DIR
+    if root:
+        rt_file = root / "configs" / "runtime.json"
+        rt = json.loads(rt_file.read_text()) if rt_file.exists() else {}
+        OUT_DIR = root / rt.get("outputs_dir", "outputs")
+        LOG_DIR = root / rt.get("logs_dir", "logs")
 
+    goal   = plan.get("mission_name", "research")
     log    = EventLogger(OUT_DIR)
     memory = Memory()
 
@@ -250,9 +255,10 @@ def main():
     with sync_playwright() as p:
         browser, ctx, page, mode = get_browser_and_page(p)
 
-        page.goto(mission.get("start_url", "https://bing.com"))
+        start_url = plan.get("start_url", "https://bing.com")
+        page.goto(start_url)
 
-        for stage in mission.get("stages", []):
+        for stage in plan.get("stages", []):
             if run_stage(page, ctx, goal, stage, memory, log):
                 break
 
@@ -273,6 +279,12 @@ def main():
         log.log("ltm_manage_done", goal=goal)
 
         print(result)
+        return result
+
+
+def main():
+    mission = json.loads(Path(sys.argv[1]).read_text())
+    run_mission(mission)
 
 
 if __name__ == "__main__":

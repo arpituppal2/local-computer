@@ -17,25 +17,27 @@ if [ ! -d "$VENV" ]; then
 fi
 source "$VENV/bin/activate"
 
-# --- deps ---
-echo "[setup] Installing dependencies..."
-pip install --upgrade pip 2>&1 | tail -1 || true
-pip install --upgrade -r "$AIDIR/requirements.txt" || true
+# --- deps (only install once; re-run if requirements.txt changes) ---
+DEPS_SENTINEL="$VENV/.deps_installed"
+REQS="$AIDIR/requirements.txt"
+if [ ! -f "$DEPS_SENTINEL" ] || [ "$REQS" -nt "$DEPS_SENTINEL" ]; then
+  echo "[setup] Installing dependencies..."
+  pip install --quiet --upgrade pip
+  pip install --quiet -r "$REQS"
+  touch "$DEPS_SENTINEL"
+fi
 
 # --- Playwright Chromium (auto-installs only if missing) ---
-PLAYWRIGHT_OK=0
-python -c "
+if ! python -c "
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     b = p.chromium.launch(headless=True); b.close()
-" 2>/dev/null && PLAYWRIGHT_OK=1 || true
-
-if [ "$PLAYWRIGHT_OK" -eq 0 ]; then
+" 2>/dev/null; then
   echo "[setup] Installing Playwright Chromium (one-time, ~150MB)..."
   playwright install chromium --with-deps 2>&1 | grep -v '^$' | tail -8 || true
 fi
 
-# --- Ollama: start in a new terminal tab if not already running ---
+# --- Ollama: start if not already running ---
 if ! ollama list >/dev/null 2>&1; then
   echo "[setup] Ollama not running — launching in a new terminal tab..."
   osascript \
@@ -64,7 +66,7 @@ if ! ollama list >/dev/null 2>&1; then
   echo "[setup] Ollama is ready."
 fi
 
-# --- Ollama model check ---
+# --- Ollama model check (skip pull if already present) ---
 for MODEL in qwen3:4b qwen3:8b; do
   if ! ollama list 2>/dev/null | grep -q "$MODEL"; then
     echo "[setup] Pulling $MODEL (required)..."
