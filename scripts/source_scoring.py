@@ -12,11 +12,17 @@ LOW_TRUST = {"reddit.com": 2, "twitter.com": 2, "x.com": 2, "pinterest.com": 1}
 
 _learned: dict[str, float] = {}
 
-def score_source(url: str, title: str = "", body: str = "") -> int:
+
+def domain_of(url: str) -> str:
+    """Return the hostname of a URL, or empty string on failure."""
     try:
-        domain = urlparse(url).hostname or ""
+        return urlparse(url).hostname or ""
     except Exception:
-        domain = ""
+        return ""
+
+
+def score_source(url: str, title: str = "", body: str = "") -> int:
+    domain = domain_of(url)
 
     score = 3
     for key, val in HIGH_TRUST.items():
@@ -41,7 +47,8 @@ def score_source(url: str, title: str = "", body: str = "") -> int:
     final = max(1, min(7, score - penalties + int(learned_delta)))
     return final
 
+
 def record_quality(url: str, was_useful: bool):
-    domain = urlparse(url).hostname or ""
+    domain = domain_of(url)
     delta = 0.3 if was_useful else -0.2
     _learned[domain] = _learned.get(domain, 0.0) + delta
