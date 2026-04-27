@@ -18,8 +18,9 @@ fi
 source "$VENV/bin/activate"
 
 # --- deps ---
-pip install --quiet --upgrade pip >/dev/null 2>&1 || true
-pip install --quiet -r "$AIDIR/requirements.txt" >/dev/null 2>&1 || true
+echo "[setup] Installing dependencies..."
+pip install --upgrade pip 2>&1 | tail -1 || true
+pip install --upgrade -r "$AIDIR/requirements.txt" || true
 
 # --- Playwright Chromium (auto-installs only if missing) ---
 PLAYWRIGHT_OK=0
