@@ -5,6 +5,20 @@
   "analyst":  "qwen3:8b",
   "heavy":    "qwen3:14b",
   "ollama_host": "http://localhost:11434",
+
+  "_comment_thresholds": "chatbot_threshold: complexity score (0-10) at or above which tasks are routed to AI chatbot UI instead of local Ollama. max_local_parallel: max simultaneous qwen3:4b/8b workers.",
+  "chatbot_threshold": 7,
+  "max_local_parallel": 3,
+
+  "_comment_chatbot": "chatbot_backends: override selectors/URLs per service. Leave empty to use built-in defaults in ai_chatbot_subagent.py.",
+  "chatbot_backends": {
+    "gemini":     {},
+    "chatgpt":    {},
+    "claude":     {},
+    "copilot":    {},
+    "perplexity": {}
+  },
+
   "timeouts": {
     "qwen3:4b":  30,
     "qwen3:8b":  60,

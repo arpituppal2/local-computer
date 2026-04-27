@@ -1,33 +1,58 @@
-"""Subagent dispatcher with local parallel inference and cloud offload."""
+"""Subagent dispatcher: local Ollama | AI chatbot UI | cloud worker.
+
+Routing priority:
+  1. If task is marked chatbot_mode or complexity >= threshold → chatbot UI
+  2. If local RAM allows → run_locally via Ollama
+  3. Cloud worker (if configured) → cloud HTTP POST
+  4. Fallback → local Ollama regardless
+"""
 from __future__ import annotations
+
 import json
 import logging
-import subprocess
 import threading
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
+
+import psutil
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Load config
 _MODELS_PATH = ROOT / "configs" / "models.json"
 _MODELS = json.loads(_MODELS_PATH.read_text()) if _MODELS_PATH.exists() else {}
 
 MODEL_PLANNER = _MODELS.get("planner", "qwen3:8b")
-MODEL_HEAVY  = _MODELS.get("heavy", "qwen3:14b")
+MODEL_HEAVY   = _MODELS.get("heavy",   "qwen3:14b")
 
-# Cloud backend definitions (free tiers)
+# If task complexity_score >= this, route to chatbot UI instead of local 14b
+CHATBOT_THRESHOLD = _MODELS.get("chatbot_threshold", 7)
+
+# Max simultaneous local Ollama subagents
+# 3 × qwen3:4b ≈ 4.5 GB; leaves headroom for Chromium + planner
+MAX_LOCAL_PARALLEL = _MODELS.get("max_local_parallel", 3)
+
 CLOUD_BACKENDS = {
-    "cloud_run":  {"check_cmd": "gcloud config get-value project", "url": "https://REGION-PROJECT_ID.REGION.r.appspot.com"},
-    "railway":   {"check_cmd": "railway whoami", "url": "https://PROJECT_ID.railway.app"},
-    "huggingface": {"check_cmd": "which huggingface-cli", "url": "https://huggingface.co/spaces/PROJECT_ID"},
-    "render":    {"check_cmd": "which render", "url": "https://PROJECT_ID.onrender.com"},
+    "cloud_run":    {"check_cmd": "gcloud config get-value project"},
+    "railway":      {"check_cmd": "railway whoami"},
+    "huggingface":  {"check_cmd": "huggingface-cli whoami"},
+    "render":       {"check_cmd": "which render"},
 }
 
-MAX_LOCAL_SUBAGENTS = 3  # 3x qwen3:4b (~1.5GB each) = 4.5GB; leaves 10GB for 8b planner + Chromium
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def _available_ram_gb() -> float:
+    return psutil.virtual_memory().available / (1024 ** 3)
+
+
+def _ram_ok_for_heavy() -> bool:
+    """Is there enough free RAM to run qwen3:14b alongside Chromium?"""
+    # 14b Q4 ≈ 8 GB; Chromium ≈ 0.5 GB; keep 1 GB headroom → need ~9.5 GB free
+    return _available_ram_gb() >= 9.5
 
 
 def _backend_available(name: str) -> bool:
+    import subprocess
     cmd = CLOUD_BACKENDS[name]["check_cmd"]
     try:
         subprocess.run(cmd.split(), capture_output=True, check=True, timeout=5)
@@ -36,49 +61,133 @@ def _backend_available(name: str) -> bool:
         return False
 
 
-def _run_locally(task: dict) -> dict:
-    goal = task.get("goal", "")
-    model = MODEL_PLANNER
-    prompt = f"Complete this research task and return JSON with 'findings' key:\n{goal}"
+# ── Core dispatch functions ────────────────────────────────────────────────────
+
+def _run_locally(task: Dict[str, Any]) -> Dict[str, Any]:
+    """Run a subagent task via local Ollama."""
     from scripts.ollama_client import call_json
-    result = call_json(model, prompt)
-    return {"status": "done", "goal": goal, "output": result}
+    goal = task.get("goal", "")
+    prompt = f"Complete this research task and return JSON with 'findings' key:\n{goal}"
+    result = call_json(prompt, model=MODEL_PLANNER)
+    return {"status": "done", "goal": goal, "output": result, "source": "local_ollama"}
 
 
-def dispatch_cloud_subagent(task: dict, backend: str = "cloud_run") -> dict:
-    if not _backend_available(backend):
-        logging.warning(f"[subagents] {backend} CLI not found — running locally")
+def _run_via_chatbot(task: Dict[str, Any]) -> Dict[str, Any]:
+    """Run a subagent task by querying a cloud AI chatbot UI via Playwright."""
+    from scripts.ai_chatbot_subagent import chatbot_query, pick_best_backend
+    goal = task.get("goal", "")
+    backend = task.get("chatbot_backend") or pick_best_backend(goal)
+    logging.info(f"[subagents] chatbot dispatch → {backend}: {goal[:80]}")
+    result = chatbot_query(goal, backend=backend)
+    return {
+        "status": "done" if result["success"] else "error",
+        "goal": goal,
+        "output": {"findings": result["response"]},
+        "source": f"chatbot:{backend}",
+        "error": result.get("error", ""),
+    }
+
+
+def _run_cloud_worker(task: Dict[str, Any], worker_url: str) -> Dict[str, Any]:
+    """POST a task to a deployed cloud worker endpoint."""
+    import httpx
+    goal = task.get("goal", "")
+    try:
+        with httpx.Client(timeout=120.0) as client:
+            resp = client.post(worker_url, json=task)
+            resp.raise_for_status()
+            return {"status": "done", "goal": goal, "output": resp.json(), "source": "cloud_worker"}
+    except Exception as e:
+        logging.warning(f"[subagents] Cloud worker failed ({e}), falling back to local")
         return _run_locally(task)
 
-    logging.info(f"[subagents] Dispatching task to {backend}: {task.get('goal', '')[:60]}")
-    # In full implementation: POST payload to deployed worker URL
-    # For now, fall back to local
+
+# ── Smart dispatch ─────────────────────────────────────────────────────────────
+
+def dispatch(task: Dict[str, Any]) -> Dict[str, Any]:
+    """Route a single task to the best available execution venue.
+
+    Task dict keys:
+      goal (str)             — what the agent should do
+      complexity (int)       — 0-10; if >= chatbot_threshold → chatbot
+      chatbot_mode (bool)    — force chatbot routing
+      chatbot_backend (str)  — override backend (gemini|chatgpt|claude|copilot|perplexity)
+      worker_url (str)       — if set, try cloud HTTP worker first
+      local_only (bool)      — skip chatbot/cloud even if RAM is tight
+    """
+    goal = task.get("goal", "")
+    complexity = int(task.get("complexity", 0))
+    force_chatbot = bool(task.get("chatbot_mode", False))
+    local_only = bool(task.get("local_only", False))
+    worker_url = task.get("worker_url", "")
+
+    # 1. Explicit chatbot flag OR complexity too high for local heavy model
+    if not local_only and (force_chatbot or complexity >= CHATBOT_THRESHOLD):
+        result = _run_via_chatbot(task)
+        if result["status"] == "done":
+            return result
+        logging.warning(f"[subagents] chatbot failed for '{goal[:60]}', falling back to local")
+
+    # 2. Cloud worker (if configured and available)
+    if not local_only and worker_url:
+        return _run_cloud_worker(task, worker_url)
+
+    # 3. Local heavy model — but only if we have the RAM
+    if not _ram_ok_for_heavy() and "heavy" in task.get("preferred_model", ""):
+        logging.warning("[subagents] Insufficient RAM for heavy model; using planner instead")
+
     return _run_locally(task)
 
 
-def run_parallel_subagents(tasks: List[dict], backend: str = "local") -> List[dict]:
+# ── Parallel batch dispatch ────────────────────────────────────────────────────
+
+def run_parallel_subagents(tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Run a list of tasks in parallel, respecting MAX_LOCAL_PARALLEL for Ollama jobs.
+
+    Chatbot tasks are NOT subject to the local semaphore (they open separate browser tabs).
+    """
     if not tasks:
         return []
 
-    results = [{}] * len(tasks)
-    semaphore = threading.Semaphore(MAX_LOCAL_SUBAGENTS)
+    results: List[Dict[str, Any]] = [{}] * len(tasks)
+    local_sem = threading.Semaphore(MAX_LOCAL_PARALLEL)
 
-    def _run(idx: int, task: dict):
-        with semaphore:
-            results[idx] = dispatch_cloud_subagent(task, backend)
+    def _run(idx: int, task: Dict[str, Any]) -> None:
+        is_chatbot = (
+            task.get("chatbot_mode")
+            or int(task.get("complexity", 0)) >= CHATBOT_THRESHOLD
+        )
+        if is_chatbot:
+            results[idx] = dispatch(task)
+        else:
+            with local_sem:
+                results[idx] = dispatch(task)
 
-    threads = [threading.Thread(target=_run, args=(i, t), daemon=True)
-               for i, t in enumerate(tasks)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+    threads = [
+        threading.Thread(target=_run, args=(i, t), daemon=True)
+        for i, t in enumerate(tasks)
+    ]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join()
+
     return results
 
 
-def pick_subagent(goal: str, state: dict, history: List[dict]) -> str:
+# ── Backward-compatible pick_subagent ─────────────────────────────────────────
+
+def pick_subagent(goal: str, state: dict, history: list) -> str:
+    """Returns a routing label: 'chatbot' | 'search' | 'workflow' | 'browse'."""
     g = (goal or "").lower()
     url = (state.get("url") or "").lower()
+
+    # Force chatbot for complex reasoning tasks
+    if any(x in g for x in [
+        "ask gemini", "use claude", "ask chatgpt", "ask copilot", "via chatgpt",
+        "ask perplexity", "deep analysis", "synthesize", "explain in depth",
+    ]):
+        return "chatbot"
 
     if any(x in g for x in ["calendar", "docs", "drive", "gmail", "youtube",
                             "prose", "notion", "sheet", "slides"]):
