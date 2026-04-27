@@ -6,45 +6,46 @@
 <title>local-computer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ── tokens ─────────────────────────────────────────────── */
+/* ── tokens ─────────────────────────────────────────────────────── */
 :root {
-  --bg:            #0e0e10;
-  --surface:       #141417;
-  --surface-2:     #1a1a1e;
-  --surface-3:     #202026;
-  --border:        rgba(255,255,255,0.06);
-  --border-hi:     rgba(255,255,255,0.11);
-  --text:          #ececee;
-  --muted:         #72727a;
-  --faint:         #38383f;
-  --accent:        #6b6af0;
-  --accent-soft:   rgba(107,106,240,0.12);
-  --accent-border: rgba(107,106,240,0.22);
-  --green:         #34c47c;
-  --green-soft:    rgba(52,196,124,0.10);
-  --red:           #e95858;
-  --red-soft:      rgba(233,88,88,0.10);
-  --orange:        #e8943a;
-  --orange-soft:   rgba(232,148,58,0.10);
-  --blue:          #4d9de8;
-  --yellow:        #e8c83a;
-  --mono:          'Geist Mono', 'JetBrains Mono', monospace;
+  --bg:            #0a0a0c;
+  --surface:       #111114;
+  --surface-2:     #18181c;
+  --surface-3:     #1e1e23;
+  --surface-4:     #25252b;
+  --border:        rgba(255,255,255,0.055);
+  --border-hi:     rgba(255,255,255,0.10);
+  --text:          #e8e8ec;
+  --text-2:        #9898a4;
+  --text-3:        #4a4a56;
+  --accent:        #7c6af5;
+  --accent-dim:    rgba(124,106,245,0.13);
+  --accent-border: rgba(124,106,245,0.24);
+  --green:         #3ecf8e;
+  --green-dim:     rgba(62,207,142,0.10);
+  --red:           #f06060;
+  --red-dim:       rgba(240,96,96,0.10);
+  --orange:        #f59e42;
+  --orange-dim:    rgba(245,158,66,0.10);
+  --yellow:        #e8d060;
+  --blue:          #5ba4f5;
+  --mono:          'JetBrains Mono', 'Fira Code', monospace;
   --sans:          'Geist', 'Inter', sans-serif;
-  --r:             6px;
-  --r-lg:          10px;
+  --r:             5px;
+  --r-lg:          9px;
   --ease:          cubic-bezier(0.16,1,0.3,1);
-  --sidebar-w:     252px;
-  --panel-w:       292px;
-  --header-h:      48px;
+  --sidebar-w:     240px;
+  --panel-w:       280px;
+  --header-h:      44px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-font-smoothing: antialiased; color-scheme: dark; }
+html { -webkit-font-smoothing: antialiased; color-scheme: dark; font-size: 13px; }
+
 body {
   font-family: var(--sans);
-  font-size: 13px;
   line-height: 1.5;
   background: var(--bg);
   color: var(--text);
@@ -53,23 +54,20 @@ body {
   display: grid;
   grid-template-rows: var(--header-h) 1fr;
   grid-template-columns: var(--sidebar-w) 1fr var(--panel-w);
-  grid-template-areas:
-    "hd hd hd"
-    "sb mn pn";
+  grid-template-areas: "hd hd hd" "sb mn pn";
 }
 
-/* scrollbar */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 99px; }
 
-/* ── header ─────────────────────────────────────────────── */
+/* ── header ─────────────────────────────────────────────────────── */
 header {
   grid-area: hd;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 16px;
+  padding: 0 14px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   z-index: 10;
@@ -78,67 +76,95 @@ header {
 .logo {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text);
-  letter-spacing: -0.3px;
-  margin-right: 4px;
+  letter-spacing: -0.2px;
+  user-select: none;
 }
 
-.wordmark-icon {
-  width: 20px; height: 20px;
+/* ── SVG logo mark ── */
+.logo-mark {
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
 }
 
-.status-pill {
+/* status pill */
+.pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 9px;
+  padding: 2px 9px 2px 7px;
   border-radius: 99px;
   font-size: 11px;
   font-weight: 500;
   font-family: var(--mono);
   background: var(--surface-2);
   border: 1px solid var(--border);
-  color: var(--muted);
-  transition: background 200ms, border-color 200ms, color 200ms;
+  color: var(--text-2);
+  transition: background 250ms var(--ease), border-color 250ms var(--ease), color 250ms var(--ease);
 }
-.status-pill.running {
-  background: var(--green-soft);
-  border-color: rgba(52,196,124,0.25);
+.pill.running {
+  background: var(--green-dim);
+  border-color: rgba(62,207,142,0.22);
   color: var(--green);
 }
-.status-dot {
-  width: 6px; height: 6px;
+.pill.done {
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.pill-dot {
+  width: 5px; height: 5px;
   border-radius: 50%;
-  background: var(--muted);
-  transition: background 200ms;
+  background: currentColor;
+  opacity: 0.5;
+  flex-shrink: 0;
 }
-.status-pill.running .status-dot {
-  background: var(--green);
-  animation: blink 1.4s ease-in-out infinite;
+.pill.running .pill-dot {
+  opacity: 1;
+  animation: pulse 1.6s ease-in-out infinite;
 }
-@keyframes blink {
+@keyframes pulse {
   0%,100% { opacity:1; transform:scale(1); }
-  50%      { opacity:0.4; transform:scale(0.65); }
+  50%      { opacity:0.35; transform:scale(0.6); }
 }
 
-.hdr-stats {
+/* header counters */
+.hdr-right {
   margin-left: auto;
   display: flex;
-  gap: 18px;
-  font-size: 11px;
-  font-family: var(--mono);
-  color: var(--muted);
+  align-items: center;
+  gap: 20px;
 }
-.hdr-stat { display: flex; gap: 4px; align-items: baseline; }
-.hdr-stat-val { color: var(--text); font-weight: 600; }
-.hdr-stat-lbl { color: var(--faint); }
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+.stat-val {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  transition: color 300ms;
+}
+.stat-lbl {
+  font-size: 9.5px;
+  color: var(--text-3);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.stat-val.flash { color: var(--green); }
 
-/* ── sidebar ─────────────────────────────────────────────── */
+/* ── sidebar ─────────────────────────────────────────────────────── */
 .sidebar {
   grid-area: sb;
   background: var(--surface);
@@ -147,50 +173,53 @@ header {
   flex-direction: column;
   overflow: hidden;
 }
+.sb-inner { flex: 1; overflow-y: auto; }
 
-.sb-scroll { flex: 1; overflow-y: auto; }
-
-.sb-block { border-bottom: 1px solid var(--border); padding: 12px 14px; }
-
+.sb-section {
+  padding: 11px 13px 12px;
+  border-bottom: 1px solid var(--border);
+}
 .sb-label {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.65px;
   text-transform: uppercase;
-  color: var(--faint);
-  margin-bottom: 8px;
+  color: var(--text-3);
+  margin-bottom: 7px;
 }
 
 #mission-name {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--accent);
   word-break: break-all;
   line-height: 1.45;
 }
 #mission-goal {
-  margin-top: 4px;
+  margin-top: 3px;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-2);
   line-height: 1.5;
 }
 
-/* stage list */
-.stage-list { display: flex; flex-direction: column; gap: 3px; }
+/* stages */
+.stage-list { display: flex; flex-direction: column; gap: 2px; }
 .stage-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 8px;
+  padding: 5px 7px;
   border-radius: var(--r);
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-2);
   border: 1px solid transparent;
-  transition: all 140ms var(--ease);
+  transition: all 160ms var(--ease);
+  cursor: default;
 }
+.stage-row:hover { background: var(--surface-2); }
 .stage-row.active {
-  background: var(--accent-soft);
+  background: var(--accent-dim);
   border-color: var(--accent-border);
   color: var(--text);
 }
@@ -198,67 +227,67 @@ header {
 .stage-pip {
   width: 5px; height: 5px;
   border-radius: 50%;
-  background: var(--faint);
+  background: var(--text-3);
   flex-shrink: 0;
   transition: background 200ms;
 }
 .stage-row.active .stage-pip { background: var(--accent); }
-.stage-row.done  .stage-pip { background: var(--green); }
+.stage-row.done .stage-pip { background: var(--green); }
 
-/* evidence */
-.ev-big {
+/* evidence meter */
+.ev-number {
   font-family: var(--mono);
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 600;
+  letter-spacing: -1.5px;
   color: var(--text);
   line-height: 1;
-  margin-bottom: 10px;
-  letter-spacing: -1px;
+  margin-bottom: 9px;
+  font-variant-numeric: tabular-nums;
+  transition: color 300ms;
 }
-.meter-track {
-  height: 3px;
-  background: var(--surface-3);
+.ev-number.bump { color: var(--green); }
+
+.track {
+  height: 2px;
+  background: var(--surface-4);
   border-radius: 99px;
   overflow: hidden;
+  margin-bottom: 6px;
 }
-.meter-fill {
+.fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--green));
+  background: linear-gradient(90deg, var(--accent) 0%, var(--green) 100%);
   border-radius: 99px;
   width: 0%;
-  transition: width 700ms var(--ease);
+  transition: width 800ms var(--ease);
 }
-.ev-meta {
+.ev-sub-row {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
   font-size: 10px;
   font-family: var(--mono);
-  color: var(--muted);
+  color: var(--text-3);
 }
 
-/* domain pills */
-.domain-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.domain-chip {
+/* domains */
+.domain-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+.d-chip {
   padding: 2px 7px;
   border-radius: 99px;
   font-size: 10px;
   font-family: var(--mono);
   background: var(--surface-3);
-  color: var(--muted);
+  color: var(--text-2);
   border: 1px solid var(--border);
-  animation: pop-in 280ms var(--ease);
+  animation: chip-in 300ms var(--ease) both;
 }
-@keyframes pop-in {
-  from { opacity:0; transform:scale(0.82); }
-  to   { opacity:1; transform:scale(1); }
+@keyframes chip-in {
+  from { opacity:0; transform:scale(0.78) translateY(3px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
 }
 
-/* ── main feed ───────────────────────────────────────────── */
+/* ── main feed ───────────────────────────────────────────────────── */
 main {
   grid-area: mn;
   display: flex;
@@ -267,111 +296,103 @@ main {
   background: var(--bg);
 }
 
-.feed-bar {
+.feed-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 16px;
-  height: 38px;
+  padding: 0 14px;
+  height: 36px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   flex-shrink: 0;
 }
-.feed-bar-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-}
-.feed-bar-count {
-  font-size: 11px;
-  font-family: var(--mono);
-  color: var(--faint);
-}
-.autoscroll-btn {
+.feed-title { font-size: 11.5px; font-weight: 600; color: var(--text); }
+.feed-count { font-size: 10.5px; font-family: var(--mono); color: var(--text-3); }
+.scroll-btn {
   margin-left: auto;
-  padding: 3px 9px;
+  padding: 2px 8px;
   border-radius: var(--r);
-  font-size: 11px;
+  font-size: 10.5px;
   background: none;
   border: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--text-2);
   cursor: pointer;
+  font-family: var(--sans);
   transition: border-color 140ms, color 140ms;
 }
-.autoscroll-btn:hover { border-color: var(--border-hi); color: var(--text); }
+.scroll-btn:hover { border-color: var(--border-hi); color: var(--text); }
 
-#event-feed {
+#feed {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 0 12px;
+  padding: 4px 0 16px;
 }
 
-.ev-row {
+/* ── event row ── */
+.ev {
   display: grid;
-  grid-template-columns: 48px 18px 1fr;
-  column-gap: 8px;
-  align-items: start;
-  padding: 3px 14px;
-  transition: background 80ms;
-  animation: slide-up 220ms var(--ease) both;
+  grid-template-columns: 44px 16px 1fr;
+  column-gap: 9px;
+  padding: 3.5px 13px;
+  transition: background 60ms;
+  animation: ev-in 200ms var(--ease) both;
 }
-.ev-row:hover { background: var(--surface-2); }
-@keyframes slide-up {
-  from { opacity:0; transform:translateY(5px); }
+.ev:hover { background: var(--surface-2); }
+@keyframes ev-in {
+  from { opacity:0; transform:translateY(4px); }
   to   { opacity:1; transform:translateY(0); }
 }
 
-.ev-time {
+.ev-t {
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--faint);
+  color: var(--text-3);
   text-align: right;
-  padding-top: 2px;
-  letter-spacing: -0.2px;
+  padding-top: 1.5px;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
 }
-.ev-icon {
-  font-size: 12px;
-  padding-top: 2px;
-  line-height: 1.3;
-}
+.ev-ico { font-size: 11px; padding-top: 2px; line-height: 1.4; }
 .ev-body { min-width: 0; }
-.ev-kind {
-  font-size: 9.5px;
+
+.ev-tag {
+  font-size: 9px;
   font-weight: 600;
   font-family: var(--mono);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: var(--muted);
-  line-height: 1.4;
+  color: var(--text-3);
+  line-height: 1.5;
 }
-.ev-detail {
+.ev-msg {
   font-size: 12px;
   color: var(--text);
-  line-height: 1.45;
+  line-height: 1.5;
   word-break: break-word;
 }
-.ev-detail a { color: var(--blue); text-decoration: none; }
-.ev-detail a:hover { text-decoration: underline; }
+.ev-msg a { color: var(--blue); text-decoration: none; }
+.ev-msg a:hover { text-decoration: underline; }
 .ev-sub {
   font-size: 10px;
   font-family: var(--mono);
-  color: var(--muted);
+  color: var(--text-2);
   margin-top: 1px;
   line-height: 1.4;
+  word-break: break-word;
 }
 
-/* per-kind accent */
-.ek-evidence    .ev-kind { color: var(--green); }
-.ek-decision    .ev-kind { color: var(--accent); }
-.ek-clusters    .ev-kind { color: var(--yellow); }
-.ek-contradiction .ev-kind { color: var(--red); }
-.ek-synthesis   .ev-kind { color: var(--orange); }
-.ek-artifact    .ev-kind { color: var(--green); }
-.ek-stuck       .ev-kind { color: var(--orange); }
-.ek-error       .ev-kind { color: var(--red); }
-.ek-mission     .ev-kind { color: var(--accent); }
+/* per-kind tag color */
+.k-evidence .ev-tag    { color: var(--green); }
+.k-decision .ev-tag    { color: var(--accent); }
+.k-cluster .ev-tag     { color: var(--yellow); }
+.k-conflict .ev-tag    { color: var(--red); }
+.k-synthesis .ev-tag   { color: var(--orange); }
+.k-artifact .ev-tag    { color: var(--green); }
+.k-stuck .ev-tag       { color: var(--orange); }
+.k-error .ev-tag       { color: var(--red); }
+.k-mission .ev-tag     { color: var(--accent); }
 
-/* ── right panel ─────────────────────────────────────────── */
+/* ── right panel ─────────────────────────────────────────────────── */
 .panel {
   grid-area: pn;
   display: flex;
@@ -380,454 +401,491 @@ main {
   border-left: 1px solid var(--border);
   overflow: hidden;
 }
-.panel-tabs {
+
+.tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  background: var(--surface);
 }
-.ptab {
+.tab {
   flex: 1;
-  height: 38px;
+  height: 36px;
   font-size: 11px;
   font-weight: 500;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--muted);
+  border-bottom: 1.5px solid transparent;
+  color: var(--text-2);
   cursor: pointer;
-  transition: color 140ms, border-color 140ms;
   font-family: var(--sans);
+  transition: color 120ms, border-color 120ms;
 }
-.ptab.active { color: var(--text); border-bottom-color: var(--accent); }
-.ptab-body { display: none; flex: 1; overflow-y: auto; padding: 10px; flex-direction: column; gap: 6px; }
-.ptab-body.active { display: flex; }
+.tab.on { color: var(--text); border-bottom-color: var(--accent); }
+
+.tab-pane { display: none; flex: 1; overflow-y: auto; padding: 9px 9px 16px; flex-direction: column; gap: 6px; }
+.tab-pane.on { display: flex; }
 
 /* cluster card */
-.cluster-card {
+.c-card {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 10px 11px;
-  animation: slide-up 280ms var(--ease) both;
+  padding: 9px 10px;
+  animation: ev-in 280ms var(--ease) both;
 }
-.cluster-claim {
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.5;
-}
-.cluster-badges {
+.c-claim { font-size: 12px; color: var(--text); line-height: 1.5; }
+.c-badges {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: wrap;
-  margin-top: 7px;
+  margin-top: 6px;
 }
 .badge {
-  padding: 2px 7px;
+  padding: 1.5px 6px;
   border-radius: 99px;
-  font-size: 10px;
+  font-size: 9.5px;
   font-family: var(--mono);
   background: var(--surface-3);
-  color: var(--muted);
+  color: var(--text-2);
   border: 1px solid var(--border);
 }
-.badge.accent { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent); }
-.badge.danger { background: var(--red-soft); border-color: rgba(233,88,88,0.2); color: var(--red); }
+.badge.hi  { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
+.badge.err { background: var(--red-dim); border-color: rgba(240,96,96,0.2); color: var(--red); }
 
-/* contra */
-.contra-card {
-  background: var(--red-soft);
-  border: 1px solid rgba(233,88,88,0.2);
+/* contradiction card */
+.x-card {
+  background: var(--red-dim);
+  border: 1px solid rgba(240,96,96,0.18);
   border-radius: var(--r-lg);
-  padding: 10px 11px;
+  padding: 9px 10px;
   font-size: 12px;
   color: var(--text);
   line-height: 1.5;
-  animation: slide-up 280ms var(--ease) both;
+  animation: ev-in 280ms var(--ease) both;
 }
-.contra-src {
-  margin-top: 5px;
-  font-size: 10px;
-  font-family: var(--mono);
-  color: var(--red);
-}
+.x-src { margin-top: 5px; font-size: 10px; font-family: var(--mono); color: var(--red); }
 
-/* report */
-#artifact-pre {
+/* report pane */
+#rpt {
   font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.65;
-  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.7;
+  color: var(--text-3);
   white-space: pre-wrap;
   word-break: break-word;
+  transition: color 300ms;
 }
-#artifact-pre.loaded { color: var(--text); }
+#rpt.loaded { color: var(--text-2); }
 
 /* empty state */
-.empty-state {
+.empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 36px 16px;
+  gap: 8px;
+  padding: 32px 14px;
   text-align: center;
-  color: var(--faint);
+  color: var(--text-3);
   font-size: 11px;
+  line-height: 1.5;
 }
-.empty-state svg { opacity: 0.28; }
+.empty svg { opacity: 0.22; margin-bottom: 2px; }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
 <header>
   <div class="logo">
-    <svg class="wordmark-icon" viewBox="0 0 20 20" fill="none" aria-label="local-computer">
-      <rect x="1" y="1" width="18" height="18" rx="4.5" stroke="#6b6af0" stroke-width="1.4"/>
-      <circle cx="10" cy="10" r="2.8" fill="#6b6af0"/>
-      <path d="M10 3.5v2.8M10 13.7v2.8M3.5 10h2.8M13.7 10h2.8" stroke="#6b6af0" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- custom SVG mark: terminal cursor inside a rounded rect -->
+    <svg class="logo-mark" viewBox="0 0 22 22" fill="none" aria-label="local-computer" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1.5" y="1.5" width="19" height="19" rx="5" stroke="#7c6af5" stroke-width="1.3"/>
+      <path d="M6 8l3 3-3 3" stroke="#7c6af5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12.5 14h3" stroke="#7c6af5" stroke-width="1.4" stroke-linecap="round"/>
     </svg>
     local-computer
   </div>
 
-  <div class="status-pill idle" id="status-pill">
-    <span class="status-dot"></span>
-    <span id="status-text">idle</span>
+  <div class="pill" id="pill">
+    <span class="pill-dot"></span>
+    <span id="pill-txt">idle</span>
   </div>
 
-  <div class="hdr-stats">
-    <span class="hdr-stat"><span class="hdr-stat-lbl">steps</span><span class="hdr-stat-val" id="h-steps">0</span></span>
-    <span class="hdr-stat"><span class="hdr-stat-lbl">evidence</span><span class="hdr-stat-val" id="h-evidence">0</span></span>
-    <span class="hdr-stat"><span class="hdr-stat-lbl">errors</span><span class="hdr-stat-val" id="h-errors">0</span></span>
+  <div class="hdr-right">
+    <div class="stat">
+      <span class="stat-val" id="h-steps">0</span>
+      <span class="stat-lbl">steps</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="h-ev">0</span>
+      <span class="stat-lbl">evidence</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="h-err">0</span>
+      <span class="stat-lbl">errors</span>
+    </div>
   </div>
 </header>
 
-<!-- SIDEBAR -->
+<!-- ── SIDEBAR ────────────────────────────────────────────────── -->
 <aside class="sidebar">
-  <div class="sb-scroll">
-    <div class="sb-block">
+  <div class="sb-inner">
+
+    <div class="sb-section">
       <div class="sb-label">Mission</div>
       <div id="mission-name">—</div>
       <div id="mission-goal"></div>
     </div>
 
-    <div class="sb-block">
+    <div class="sb-section">
       <div class="sb-label">Stages</div>
       <div class="stage-list" id="stage-list">
-        <div class="empty-state" style="padding:10px 0">
-          <span>Waiting for mission…</span>
-        </div>
+        <div class="empty" style="padding:6px 0 2px;font-size:10.5px;align-items:flex-start;">Waiting…</div>
       </div>
     </div>
 
-    <div class="sb-block">
-      <div class="sb-label">Evidence collected</div>
-      <div class="ev-big" id="ev-count">0</div>
-      <div class="meter-track">
-        <div class="meter-fill" id="ev-meter"></div>
-      </div>
-      <div class="ev-meta">
+    <div class="sb-section">
+      <div class="sb-label">Evidence</div>
+      <div class="ev-number" id="ev-n">0</div>
+      <div class="track"><div class="fill" id="ev-fill"></div></div>
+      <div class="ev-sub-row">
         <span id="ev-trusted">0 trusted</span>
         <span id="ev-goal">goal: 6</span>
       </div>
     </div>
 
-    <div class="sb-block">
+    <div class="sb-section">
       <div class="sb-label">Domains</div>
-      <div class="domain-wrap" id="domain-list"></div>
+      <div class="domain-wrap" id="domain-list">
+        <span style="font-size:10.5px;color:var(--text-3)">None yet</span>
+      </div>
     </div>
+
   </div>
 </aside>
 
-<!-- MAIN FEED -->
+<!-- ── MAIN FEED ──────────────────────────────────────────────── -->
 <main>
-  <div class="feed-bar">
-    <span class="feed-bar-title">Agent log</span>
-    <span class="feed-bar-count" id="feed-count">0 events</span>
-    <button class="autoscroll-btn" id="autoscroll-btn">↓ auto</button>
+  <div class="feed-header">
+    <span class="feed-title">Agent log</span>
+    <span class="feed-count" id="feed-count">0 events</span>
+    <button class="scroll-btn" id="scroll-btn">↓ auto</button>
   </div>
-  <div id="event-feed"></div>
+  <div id="feed"></div>
 </main>
 
-<!-- RIGHT PANEL -->
+<!-- ── RIGHT PANEL ───────────────────────────────────────────── -->
 <aside class="panel">
-  <div class="panel-tabs">
-    <button class="ptab active" onclick="switchTab('clusters')">Clusters</button>
-    <button class="ptab" onclick="switchTab('contradictions')" id="contra-tab-btn">Contra</button>
-    <button class="ptab" onclick="switchTab('artifact')">Report</button>
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('clusters')">Clusters</button>
+    <button class="tab" onclick="switchTab('conflicts')" id="conflict-tab">Conflicts</button>
+    <button class="tab" onclick="switchTab('report')">Report</button>
   </div>
 
-  <div class="ptab-body active" id="tab-clusters">
-    <div class="empty-state" id="clusters-empty">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-      Waiting for clusters…
+  <div class="tab-pane on" id="pane-clusters">
+    <div class="empty" id="clusters-empty">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg>
+      Clusters appear after evidence is gathered
     </div>
   </div>
 
-  <div class="ptab-body" id="tab-contradictions">
-    <div class="empty-state" id="contra-empty">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-      No contradictions flagged
+  <div class="tab-pane" id="pane-conflicts">
+    <div class="empty" id="conflicts-empty">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      No contradictions detected
     </div>
   </div>
 
-  <div class="ptab-body" id="tab-artifact">
-    <div class="empty-state" id="artifact-empty">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Report appears after synthesis
+  <div class="tab-pane" id="pane-report">
+    <div class="empty" id="report-empty">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+      Report appears after synthesis completes
     </div>
-    <pre id="artifact-pre"></pre>
+    <pre id="rpt"></pre>
   </div>
 </aside>
 
 <script>
-const POLL_MS = 1200;
-const EVIDENCE_GOAL = 6;
+const POLL = 1200;
+const EV_GOAL = 6;
+
 let autoScroll = true;
 let lastIdx = 0;
-let knownDomains = new Set();
-let allEvents = [];
+let allEvs = [];
+let domains = new Set();
+let domainsDirty = false;
 
-// ── utils ──────────────────────────────────────────────────
-function ts(sec) {
-  return new Date(sec*1000).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function shortUrl(u) {
-  try { const p=new URL(u); return p.hostname.replace('www.','')+p.pathname.slice(0,38); }
+// ── utils ──────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const shortUrl = u => {
+  try { const p=new URL(u); return p.hostname.replace('www.','')+p.pathname.slice(0,40); }
   catch { return String(u||'').slice(0,55); }
+};
+const hms = sec => new Date(sec*1000).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+function flash(el, cls='flash') {
+  el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls), 600);
 }
 
-// ── tab switching ──────────────────────────────────────────
+// ── tab switch ─────────────────────────────────────────────────
 function switchTab(name) {
-  const names = ['clusters','contradictions','artifact'];
-  document.querySelectorAll('.ptab').forEach((b,i) => b.classList.toggle('active', names[i]===name));
-  document.querySelectorAll('.ptab-body').forEach(t => t.classList.toggle('active', t.id==='tab-'+name));
+  const names = ['clusters','conflicts','report'];
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('on', names[i]===name));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('on', p.id==='pane-'+name));
 }
 
-// ── auto-scroll toggle ─────────────────────────────────────
-document.getElementById('autoscroll-btn').addEventListener('click', function() {
+// auto-scroll toggle
+$('scroll-btn').addEventListener('click', function() {
   autoScroll = !autoScroll;
-  this.textContent = autoScroll ? '↓ auto' : '↓ off';
-  this.style.color = autoScroll ? '' : 'var(--muted)';
+  this.textContent = autoScroll ? '↓ auto' : '— off';
 });
 
-// ── event kind map ─────────────────────────────────────────
-const KIND = {
-  mission_start:       { icon:'🚀', cls:'ek-mission',       label:'MISSION' },
-  browser_ready:       { icon:'🌐', cls:'',                  label:'BROWSER' },
-  stage_start:         { icon:'▶',  cls:'ek-mission',        label:'STAGE' },
-  observe:             { icon:'👁', cls:'',                   label:'OBSERVE' },
-  evidence:            { icon:'📄', cls:'ek-evidence',       label:'EVIDENCE' },
-  claims_extracted:    { icon:'🔍', cls:'ek-evidence',       label:'CLAIMS' },
-  clusters:            { icon:'🗂', cls:'ek-clusters',       label:'CLUSTER' },
-  contradictions:      { icon:'⚠', cls:'ek-contradiction',  label:'CONTRADICT' },
-  decision:            { icon:'🤔', cls:'ek-decision',       label:'DECIDE' },
-  action_failed:       { icon:'✗',  cls:'ek-error',          label:'FAIL' },
-  stuck_detected:      { icon:'🔄', cls:'ek-stuck',          label:'STUCK' },
-  new_query:           { icon:'🔎', cls:'ek-stuck',          label:'REQUERY' },
-  evidence_sufficient: { icon:'✓',  cls:'ek-evidence',       label:'SUFFICIENT' },
-  synthesis_start:     { icon:'🧠', cls:'ek-synthesis',      label:'SYNTHESIS' },
-  artifact_saved:      { icon:'💾', cls:'ek-artifact',       label:'ARTIFACT' },
-  mission_complete:    { icon:'🏁', cls:'ek-mission',        label:'COMPLETE' },
-  warning:             { icon:'⚠', cls:'ek-error',           label:'WARN' },
-  nav_error:           { icon:'⛔', cls:'ek-error',           label:'NAV ERR' },
-  critique:            { icon:'·',  cls:'',                   label:'CRITIQUE' },
-  done:                { icon:'✓',  cls:'ek-evidence',        label:'DONE' },
+// ── event kind registry ─────────────────────────────────────────
+const K = {
+  mission_start:       { ico:'⬡', cls:'k-mission',    tag:'MISSION' },
+  browser_ready:       { ico:'◎', cls:'',              tag:'BROWSER' },
+  stage_start:         { ico:'▶', cls:'k-mission',     tag:'STAGE' },
+  observe:             { ico:'◉', cls:'',              tag:'OBSERVE' },
+  evidence:            { ico:'◆', cls:'k-evidence',    tag:'EVIDENCE' },
+  claims_extracted:    { ico:'◈', cls:'k-evidence',    tag:'CLAIMS' },
+  clusters:            { ico:'⬡', cls:'k-cluster',     tag:'CLUSTER' },
+  contradictions:      { ico:'△', cls:'k-conflict',    tag:'CONFLICT' },
+  decision:            { ico:'◐', cls:'k-decision',    tag:'DECIDE' },
+  action_failed:       { ico:'✕', cls:'k-error',       tag:'FAIL' },
+  stuck_detected:      { ico:'↺', cls:'k-stuck',       tag:'STUCK' },
+  new_query:           { ico:'⌕', cls:'k-stuck',       tag:'REQUERY' },
+  evidence_sufficient: { ico:'✓', cls:'k-evidence',    tag:'SUFFICIENT' },
+  synthesis_start:     { ico:'◎', cls:'k-synthesis',   tag:'SYNTHESIZE' },
+  artifact_saved:      { ico:'◉', cls:'k-artifact',    tag:'ARTIFACT' },
+  mission_complete:    { ico:'⬡', cls:'k-mission',     tag:'COMPLETE' },
+  done:                { ico:'✓', cls:'k-evidence',     tag:'DONE' },
+  critique:            { ico:'·', cls:'',               tag:'CRITIQUE' },
+  warning:             { ico:'△', cls:'k-error',        tag:'WARN' },
+  nav_error:           { ico:'✕', cls:'k-error',        tag:'NAV ERR' },
+  ltm_read:            { ico:'◈', cls:'k-decision',    tag:'MEMORY' },
+  ltm_manage_done:     { ico:'◈', cls:'k-decision',    tag:'MEMORY' },
+  page_skip:           { ico:'·', cls:'',              tag:'SKIP' },
 };
 
-function renderEvent(e) {
-  const m = KIND[e.kind] || { icon:'·', cls:'', label: e.kind.toUpperCase().replace(/_/g,' ') };
-  let detail = '', sub = '';
+function buildEvRow(e) {
+  const m = K[e.kind] || { ico:'·', cls:'', tag: e.kind.replace(/_/g,' ').toUpperCase() };
+  let msg = '', sub = '';
 
-  switch (e.kind) {
-    case 'mission_start':    detail=`<strong>${esc(e.mission_name)}</strong> &mdash; ${e.stage_count||0} stage(s)`; break;
-    case 'browser_ready':    detail=`Connected via <strong>${esc(e.mode)}</strong>`; break;
-    case 'stage_start':      detail=`<strong>${esc(e.stage)}</strong> &mdash; ${esc(e.goal)}`; sub=`max ${e.max_steps} steps`; break;
-    case 'observe':          detail=`<a href="${esc(e.url)}" target="_blank">${esc(shortUrl(e.url))}</a>`; sub=`${e.targets||0} targets · step ${e.step||0}`; break;
-    case 'evidence':         detail=`<strong>${esc(e.domain)}</strong> &mdash; score ${e.source_score||e.score||'?'}`; sub=esc((e.preview||'').slice(0,110)); break;
-    case 'claims_extracted': detail=`<strong>${e.count}</strong> claims from ${esc(shortUrl(e.url))}`; break;
-    case 'clusters':         detail=`<strong>${e.cluster_count}</strong> clusters`; if(e.clusters&&e.clusters.length) sub=esc(e.clusters[0].representative_claim.slice(0,100)); break;
-    case 'contradictions':   detail=`<strong>${e.count}</strong> contradiction(s)`; break;
-    case 'decision':         detail=`<strong>${esc(e.action)}</strong>${e.value?' &mdash; '+esc(String(e.value).slice(0,80)):''}`; sub=esc((e.reasoning||'').slice(0,110)); break;
-    case 'action_failed':    detail=`${esc(e.action)} &mdash; <span style="color:var(--red)">${esc(e.error)}</span>`; break;
-    case 'stuck_detected':   detail=`Stuck on <a href="${esc(e.url)}" target="_blank">${esc(shortUrl(e.url))}</a>`; break;
-    case 'new_query':        detail=`<strong>${esc(e.query)}</strong>`; break;
-    case 'evidence_sufficient': detail=`<strong>${e.evidence_count}</strong> items · ${e.unique_domains} domains`; break;
-    case 'synthesis_start':  detail=`<strong>${esc(e.model)}</strong> on ${e.evidence_items} items`; break;
-    case 'artifact_saved':   detail=`Saved <strong>${esc((e.path||'').split('/').pop())}</strong> (${(e.size_chars||0).toLocaleString()} chars)`; break;
-    case 'mission_complete': detail=`Done &mdash; ${e.evidence_count} evidence · ${e.cluster_count} clusters`; break;
-    case 'critique':         detail=esc((e.summary||e.message||JSON.stringify(e)).slice(0,120)); break;
-    case 'done':             detail=`${e.evidence||0} evidence items collected`; break;
-    default:
-      const filtered = Object.fromEntries(Object.entries(e).filter(([k])=>!['kind','ts'].includes(k)));
-      detail = esc(JSON.stringify(filtered).slice(0,130));
+  switch(e.kind) {
+    case 'mission_start':       msg=`<strong>${esc(e.mission_name)}</strong> &mdash; ${e.stage_count||0} stages`; break;
+    case 'browser_ready':       msg=`Ready via <strong>${esc(e.mode)}</strong>`; break;
+    case 'stage_start':         msg=`<strong>${esc(e.stage||e.goal)}</strong>`; sub=esc(e.goal||''); break;
+    case 'observe':             msg=`<a href="${esc(e.url)}" target="_blank">${esc(shortUrl(e.url))}</a>`; sub=`${e.targets||0} targets`; break;
+    case 'evidence':            msg=`<strong>${esc(e.domain||shortUrl(e.url||''))}</strong>`; sub=`score ${e.score||e.source_score||'?'}  ·  ${e.claim_count||0} claims`; break;
+    case 'claims_extracted':    msg=`<strong>${e.count}</strong> claims &nbsp;<span style="color:var(--text-2)">${esc(shortUrl(e.url))}</span>`; break;
+    case 'clusters':            msg=`<strong>${e.cluster_count}</strong> clusters formed`; if(e.clusters&&e.clusters[0]) sub=esc(e.clusters[0].representative_claim.slice(0,100)); break;
+    case 'contradictions':      msg=`<strong>${e.count}</strong> contradiction${e.count!==1?'s':''} detected`; break;
+    case 'decision':            msg=`<strong>${esc(e.action)}</strong>${e.value?` &mdash; <span style="color:var(--text-2)">${esc(String(e.value).slice(0,72))}</span>`:''}`;
+                                sub=esc((e.reasoning||'').slice(0,100)); break;
+    case 'action_failed':       msg=`${esc(e.action)} &nbsp;<span style="color:var(--red)">${esc(e.error||'')}</span>`; break;
+    case 'stuck_detected':      msg=`Stuck at <a href="${esc(e.url)}" target="_blank">${esc(shortUrl(e.url))}</a>`; break;
+    case 'new_query':           msg=`<strong>${esc(e.query)}</strong>`; break;
+    case 'evidence_sufficient': msg=`<strong>${e.evidence_count}</strong> items &nbsp;·&nbsp; ${e.unique_domains} domains`; break;
+    case 'synthesis_start':     msg=`Synthesizing with <strong>${esc(e.model)}</strong> over ${e.evidence_items} items`; break;
+    case 'artifact_saved':      msg=`Saved <strong>${esc((e.path||'').split('/').pop())}</strong>`; sub=`${(e.size_chars||0).toLocaleString()} chars`; break;
+    case 'mission_complete':    msg=`Complete &nbsp;·&nbsp; ${e.evidence_count} evidence &nbsp;·&nbsp; ${e.cluster_count} clusters`; break;
+    case 'done':                msg=`${e.evidence||0} evidence items`; break;
+    case 'critique':            msg=esc((e.summary||e.message||'').slice(0,120)); break;
+    case 'ltm_read':            msg=`Prior context loaded &nbsp;<span style="color:var(--text-2)">(${(e.chars||0).toLocaleString()} chars)</span>`; break;
+    case 'ltm_manage_done':     msg=`Memory updated for <strong>${esc(e.goal)}</strong>`; break;
+    case 'page_skip':           msg=`<span style="color:var(--text-3)">${esc(shortUrl(e.url||''))}</span> &nbsp;·&nbsp; ${esc(e.reason)}`; break;
+    default: {
+      const f = Object.fromEntries(Object.entries(e).filter(([k])=>!['kind','ts'].includes(k)));
+      msg = `<span style="color:var(--text-2)">${esc(JSON.stringify(f).slice(0,120))}</span>`;
+    }
   }
 
   const row = document.createElement('div');
-  row.className = `ev-row ${m.cls}`;
+  row.className = `ev ${m.cls}`;
   row.innerHTML = `
-    <span class="ev-time">${ts(e.ts)}</span>
-    <span class="ev-icon">${m.icon}</span>
+    <span class="ev-t">${hms(e.ts)}</span>
+    <span class="ev-ico">${m.ico}</span>
     <div class="ev-body">
-      <div class="ev-kind">${m.label}</div>
-      <div class="ev-detail">${detail}</div>
-      ${sub ? `<div class="ev-sub">${sub}</div>` : ''}
+      <div class="ev-tag">${m.tag}</div>
+      <div class="ev-msg">${msg}</div>
+      ${sub?`<div class="ev-sub">${sub}</div>`:''}
     </div>`;
   return row;
 }
 
-// ── sidebar updaters ───────────────────────────────────────
-function updateMission(evs) {
+// ── sidebar helpers ─────────────────────────────────────────────
+function syncMission(evs) {
   const ms = evs.find(e=>e.kind==='mission_start');
   if (!ms) return;
-  document.getElementById('mission-name').textContent = ms.mission_name || '—';
+  $('mission-name').textContent = ms.mission_name || '—';
   const sg = evs.find(e=>e.kind==='stage_start');
-  if (sg) document.getElementById('mission-goal').textContent = sg.goal || '';
+  if (sg) $('mission-goal').textContent = sg.goal || '';
 }
 
-function updateStages(evs) {
+function syncStages(evs) {
   const starts = evs.filter(e=>e.kind==='stage_start');
   if (!starts.length) return;
-  const done = evs.some(e=>e.kind==='mission_complete');
-  const sl = document.getElementById('stage-list');
+  const complete = evs.some(e=>e.kind==='mission_complete');
+  const sl = $('stage-list');
   sl.innerHTML = '';
   starts.forEach((s,i) => {
-    const isDone   = i < starts.length-1 || done;
-    const isActive = !isDone && i === starts.length-1;
+    const done   = i < starts.length-1 || complete;
+    const active = !done && i === starts.length-1;
     const row = document.createElement('div');
-    row.className = `stage-row ${isDone?'done':isActive?'active':''}`;
+    row.className = `stage-row ${done?'done':active?'active':''}`;
     row.innerHTML = `<span class="stage-pip"></span>${esc(s.stage||s.goal||'Stage '+(i+1))}`;
     sl.appendChild(row);
   });
 }
 
-function updateEvidence(state) {
+function syncEvidence(state) {
   const n = state.evidence_count || 0;
-  document.getElementById('ev-count').textContent   = n;
-  document.getElementById('h-evidence').textContent = n;
-  document.getElementById('h-steps').textContent    = state.step_count || 0;
-  document.getElementById('h-errors').textContent   = state.error_count || 0;
-  document.getElementById('ev-meter').style.width   = Math.min(100, (n/EVIDENCE_GOAL)*100) + '%';
+  const prevN = parseInt($('ev-n').textContent)||0;
+
+  $('ev-n').textContent = n;
+  $('h-ev').textContent = n;
+  $('h-steps').textContent = state.step_count || 0;
+  $('h-err').textContent   = state.error_count || 0;
+  $('ev-fill').style.width = Math.min(100,(n/EV_GOAL)*100)+'%';
+
   const trusted = (state.events||[]).filter(e=>e.kind==='evidence'&&(e.source_score||e.score||0)>=4).length;
-  document.getElementById('ev-trusted').textContent = trusted + ' trusted';
+  $('ev-trusted').textContent = trusted+' trusted';
+
+  if (n > prevN) {
+    flash($('ev-n'), 'bump');
+    flash($('h-ev'));
+  }
 }
 
-function updateDomains(evs) {
-  const dl = document.getElementById('domain-list');
+function syncDomains(evs) {
+  if (!domainsDirty) return;
+  domainsDirty = false;
+  const dl = $('domain-list');
+  // clear "None yet" text node if present
+  if (dl.querySelector('span')) dl.innerHTML = '';
   evs.filter(e=>e.kind==='evidence'&&e.domain).forEach(e=>{
-    if (knownDomains.has(e.domain)) return;
-    knownDomains.add(e.domain);
+    if (domains.has(e.domain)) return;
+    domains.add(e.domain);
     const chip = document.createElement('span');
-    chip.className = 'domain-chip';
+    chip.className = 'd-chip';
     chip.textContent = e.domain;
     dl.appendChild(chip);
   });
 }
 
-// ── panel updaters ─────────────────────────────────────────
-function updateClusters(state) {
-  const clusters = state.clusters || [];
-  if (!clusters.length) return;
-  const container = document.getElementById('tab-clusters');
-  document.getElementById('clusters-empty').style.display = 'none';
-  container.querySelectorAll('.cluster-card').forEach(el=>el.remove());
-  clusters.slice(0,20).forEach(c=>{
+// ── panel helpers ───────────────────────────────────────────────
+function syncClusters(state) {
+  const cl = state.clusters || [];
+  if (!cl.length) return;
+  $('clusters-empty').style.display = 'none';
+  const pane = $('pane-clusters');
+  pane.querySelectorAll('.c-card').forEach(e=>e.remove());
+  cl.slice(0,24).forEach(c=>{
     const card = document.createElement('div');
-    card.className = 'cluster-card';
+    card.className = 'c-card';
     card.innerHTML = `
-      <div class="cluster-claim">${esc(c.representative_claim)}</div>
-      <div class="cluster-badges">
-        <span class="badge accent">${c.source_count} source${c.source_count!==1?'s':''}</span>
+      <div class="c-claim">${esc(c.representative_claim)}</div>
+      <div class="c-badges">
+        <span class="badge hi">${c.source_count} source${c.source_count!==1?'s':''}</span>
         ${(c.domains||[]).slice(0,3).map(d=>`<span class="badge">${esc(d)}</span>`).join('')}
-        ${c.has_contradiction?`<span class="badge danger">conflict</span>`:''}
+        ${c.has_contradiction?`<span class="badge err">conflict</span>`:''}
       </div>`;
-    container.appendChild(card);
+    pane.appendChild(card);
   });
 }
 
-function updateContradictions(state) {
+function syncConflicts(state) {
   const items = state.contradictions || [];
   if (!items.length) return;
-  const container = document.getElementById('tab-contradictions');
-  document.getElementById('contra-empty').style.display = 'none';
-  container.querySelectorAll('.contra-card').forEach(el=>el.remove());
+  $('conflicts-empty').style.display = 'none';
+  const pane = $('pane-conflicts');
+  pane.querySelectorAll('.x-card').forEach(e=>e.remove());
   items.forEach(c=>{
     const card = document.createElement('div');
-    card.className = 'contra-card';
-    card.innerHTML = `${esc(c.claim)}<div class="contra-src">${(c.domains||[]).join(' · ')}</div>`;
-    container.appendChild(card);
+    card.className = 'x-card';
+    card.innerHTML = `${esc(c.claim)}<div class="x-src">${(c.domains||[]).join(' · ')}</div>`;
+    pane.appendChild(card);
   });
-  document.getElementById('contra-tab-btn').textContent = `Contra (${items.length})`;
+  $('conflict-tab').textContent = `Conflicts (${items.length})`;
 }
 
-function updateArtifact(evs) {
-  const saved = evs.filter(e=>e.kind==='artifact_saved').pop();
+function syncArtifact(evs) {
+  const saved = [...evs].reverse().find(e=>e.kind==='artifact_saved');
   if (!saved) return;
-  document.getElementById('artifact-empty').style.display = 'none';
+  $('report-empty').style.display = 'none';
   fetch('/artifact?path='+encodeURIComponent(saved.path))
     .then(r=>r.ok?r.text():null)
-    .then(text=>{
-      if (!text) return;
-      const el = document.getElementById('artifact-pre');
-      el.textContent = text;
+    .then(txt=>{
+      if (!txt) return;
+      const el = $('rpt');
+      el.textContent = txt;
       el.classList.add('loaded');
     }).catch(()=>{
-      document.getElementById('artifact-pre').textContent = '(at: '+saved.path+')';
+      $('rpt').textContent='(saved to: '+saved.path+')';
     });
 }
 
-function updateStatus(evs) {
-  const pill = document.getElementById('status-pill');
-  const txt  = document.getElementById('status-text');
+function syncStatus(evs) {
+  const pill = $('pill');
+  const txt  = $('pill-txt');
   const last = evs[evs.length-1];
   if (!last) return;
-  const done = ['mission_complete','artifact_saved'].includes(last.kind);
-  const active = ['mission_start','stage_start','observe','decision',
-                  'evidence','synthesis_start','stuck_detected'].includes(last.kind);
-  pill.className = 'status-pill ' + (done ? 'idle' : active ? 'running' : 'idle');
-  txt.textContent = done ? 'done'
-    : last.kind==='synthesis_start' ? 'synthesizing'
-    : last.kind==='observe'         ? 'browsing'
-    : last.kind==='evidence'        ? 'extracting'
-    : last.kind==='decision'        ? 'deciding'
-    : last.kind==='stuck_detected'  ? 'replanning'
-    : active ? 'running' : 'idle';
+
+  const isDone   = ['mission_complete','artifact_saved'].includes(last.kind);
+  const isActive = ['mission_start','stage_start','observe','decision',
+                    'evidence','synthesis_start','stuck_detected'].includes(last.kind);
+
+  pill.className = 'pill ' + (isDone?'done':isActive?'running':'');
+  txt.textContent =
+    isDone                          ? 'done'        :
+    last.kind==='synthesis_start'   ? 'synthesizing':
+    last.kind==='observe'           ? 'browsing'    :
+    last.kind==='evidence'          ? 'extracting'  :
+    last.kind==='decision'          ? 'deciding'    :
+    last.kind==='stuck_detected'    ? 'replanning'  :
+    isActive                        ? 'running'     : 'idle';
 }
 
-// ── poll loop ──────────────────────────────────────────────
-const feed  = document.getElementById('event-feed');
-const fcount = document.getElementById('feed-count');
+// ── poll ────────────────────────────────────────────────────────
+const feedEl = $('feed');
+const feedCt = $('feed-count');
 
 async function poll() {
   try {
-    const res = await fetch('/state');
-    if (!res.ok) return;
-    const state = await res.json();
+    const r = await fetch('/state');
+    if (!r.ok) return;
+    const state = await r.json();
     const evs = state.events || [];
-    const newEvs = evs.slice(lastIdx);
-    newEvs.forEach(e => feed.appendChild(renderEvent(e)));
-    if (newEvs.length) {
+    const fresh = evs.slice(lastIdx);
+
+    if (fresh.length) {
+      fresh.forEach(e => {
+        if (e.kind === 'evidence' && e.domain) domainsDirty = true;
+        feedEl.appendChild(buildEvRow(e));
+      });
       lastIdx = evs.length;
-      allEvents = evs;
-      fcount.textContent = evs.length + ' events';
+      allEvs  = evs;
+      feedCt.textContent = evs.length + ' events';
+      if (autoScroll) feedEl.scrollTop = feedEl.scrollHeight;
     }
-    if (autoScroll && newEvs.length) feed.scrollTop = feed.scrollHeight;
-    updateStatus(allEvents);
-    updateMission(allEvents);
-    updateStages(allEvents);
-    updateEvidence(state);
-    updateDomains(allEvents);
-    updateClusters(state);
-    updateContradictions(state);
-    updateArtifact(allEvents);
+
+    syncStatus(allEvs);
+    syncMission(allEvs);
+    syncStages(allEvs);
+    syncEvidence(state);
+    syncDomains(allEvs);
+    syncClusters(state);
+    syncConflicts(state);
+    syncArtifact(allEvs);
   } catch(_) {}
 }
 
 poll();
-setInterval(poll, POLL_MS);
+setInterval(poll, POLL);
 </script>
 </body>
 </html>
