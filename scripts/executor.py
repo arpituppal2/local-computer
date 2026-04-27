@@ -1,4 +1,4 @@
-"""Browser action executor with config-driven timeouts, ambiguity guards, batch limits (fixes #25-28)."""
+"""Browser action executor with config-driven timeouts, ambiguity guards, batch limits."""
 from __future__ import annotations
 import json, logging
 from pathlib import Path
@@ -10,6 +10,15 @@ CLICK_TIMEOUT = _rt.get("click_timeout", 12000)
 NAV_TIMEOUT   = _rt.get("nav_timeout", 8000)
 IDLE_TIMEOUT  = _rt.get("idle_timeout", 2500)
 BATCH_MAX     = 20
+
+
+def _wait_for_load(page, timeout: int = 3000) -> None:
+    """Wait for page to settle after navigation or click; silently ignores timeout."""
+    try:
+        page.wait_for_load_state("domcontentloaded", timeout=timeout)
+    except Exception:
+        pass  # page may already be loaded or navigation may not have started
+
 
 def execute(page, context, action: dict, depth: int = 0) -> dict:
     act  = action.get("action", "")
@@ -27,12 +36,19 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:
     elif act == "click":
         try:
             matches = page.locator(f"text={text}").all()
+            if not matches:
+                # Fallback: try CSS selector if text looks like one
+                if text.startswith(("#", ".", "[")):
+                    matches = page.locator(text).all()
+            if not matches:
+                return {"ok": False, "error": f"no elements found for '{text}'"}
             if len(matches) > 5:
                 logging.warning(f"[executor] click: {len(matches)} matches for '{text}', using first")
             matches[0].click(timeout=CLICK_TIMEOUT)
+            _wait_for_load(page)  # wait for any navigation triggered by click
             return {"ok": True}
-        except Exception as e2:
-            return {"ok": False, "error": str(e2)}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
 
     elif act == "type":
         try:
@@ -52,6 +68,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:
     elif act == "press":
         try:
             page.keyboard.press(str(val))
+            _wait_for_load(page)  # Enter / Return may navigate
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -66,6 +83,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:
     elif act == "go_back":
         try:
             page.go_back(timeout=NAV_TIMEOUT)
+            _wait_for_load(page)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}

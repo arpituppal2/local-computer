@@ -48,13 +48,13 @@ MAX_STEPS = RUNTIME.get("max_steps_per_stage", 25)
 SEARCH_BASE = "https://www.bing.com/search?q="
 
 HIGH_SCORE_THRESH = 4
-STUCK_THRESHOLD = 3
+STUCK_THRESHOLD   = 3
 EVIDENCE_GOAL_BASE = 6
 
 
 # ── adaptive evidence goal ─────────────────────────────────────────────────
 def adaptive_evidence_goal(memory: Memory) -> int:
-    base = EVIDENCE_GOAL_BASE
+    base  = EVIDENCE_GOAL_BASE
     bonus = len(set(e.get("source_domain", "") for e in memory.evidence))
     return base + max(0, 3 - bonus)
 
@@ -80,7 +80,6 @@ def decide_action(goal: str, state: dict, memory: Memory, step: int) -> dict:
         for r in list(memory.recent_failures)[-4:]
     ]
 
-    # Surface prior context in the decision prompt if it exists
     prior_block = ""
     if memory.prior_context:
         prior_block = f"\nPRIOR CONTEXT FROM MEMORY:\n{memory.prior_context[:800]}\n"
@@ -117,44 +116,58 @@ RULES:
 # ════════════════════════════════════════════════════════════════════════
 # PAGE PROCESSING
 # ════════════════════════════════════════════════════════════════════════
-def process_page(state, memory, log):
+def _already_visited(url: str, memory: Memory) -> bool:
+    """Return True if this URL is already in the evidence store."""
+    return any(e.get("url") == url for e in memory.evidence)
+
+
+def process_page(state: dict, memory: Memory, log: EventLogger) -> int:
     text = state.get("visible_text", "")
+    url  = state.get("url", "")
+
     if len(text) < 200:
         return 0
 
-    score = score_source(state["url"], state.get("title", ""), text)
-    claims = extract_claims(state.get("title", ""), state["url"], text)
+    # Skip URLs we have already processed (cross-page deduplication)
+    if _already_visited(url, memory):
+        log.log("page_skip", url=url, reason="already_visited")
+        return 0
+
+    score  = score_source(url, state.get("title", ""), text)
+    claims = extract_claims(state.get("title", ""), url, text)
 
     if not claims:
         return 0
 
     memory.add_evidence({
-        "url": state["url"],
-        "title": state.get("title", ""),
-        "score": score,
-        "source_domain": domain_of(state["url"]),
-        "claims": claims,
+        "url":           url,
+        "title":         state.get("title", ""),
+        "score":         score,
+        "source_domain": domain_of(url),
+        "claims":        claims,
     })
 
-    log.log("evidence", url=state["url"], score=score, claim_count=len(claims))
+    log.log("evidence", url=url, score=score, claim_count=len(claims))
     return len(claims)
 
 
 def enough_evidence(memory: Memory) -> bool:
-    if len(memory.evidence) < 5:
+    """True when we have enough trusted, diverse evidence to stop."""
+    goal = adaptive_evidence_goal(memory)   # use same threshold everywhere
+    if len(memory.evidence) < goal:
         return False
 
     trusted = sum(1 for e in memory.evidence if e.get("score", 0) >= HIGH_SCORE_THRESH)
-    domains = len(set(e.get("source_domain") for e in memory.evidence))
+    domains  = len(set(e.get("source_domain") for e in memory.evidence))
     return trusted >= 2 and domains >= 2
 
 
 # ════════════════════════════════════════════════════════════════════════
 # STAGE LOOP
 # ════════════════════════════════════════════════════════════════════════
-def run_stage(page, context, goal, stage, memory, log):
+def run_stage(page, context, goal: str, stage: dict, memory: Memory, log: EventLogger) -> bool:
     stage_goal = stage.get("goal", goal)
-    max_steps = min(stage.get("max_steps", 20), MAX_STEPS)
+    max_steps  = min(stage.get("max_steps", 20), MAX_STEPS)
 
     log.log("stage_start", goal=stage_goal)
 
@@ -167,7 +180,7 @@ def run_stage(page, context, goal, stage, memory, log):
         log.log("critique", **crit)
 
         if crit.get("is_stuck"):
-            q = crit.get("suggested_query") or stage_goal
+            q      = crit.get("suggested_query") or stage_goal
             action = {"action": "navigate", "value": SEARCH_BASE + q.replace(" ", "+")}
             result = execute(page, context, action)
             memory.record_action(action, result)
@@ -177,16 +190,16 @@ def run_stage(page, context, goal, stage, memory, log):
         process_page(state, memory, log)
 
         # ── stop condition ───────────────────────────────────────────
-        if len(memory.evidence) >= adaptive_evidence_goal(memory) and enough_evidence(memory):
+        if enough_evidence(memory):
             log.log("done", evidence=len(memory.evidence))
             return True
 
         # ── decide action ────────────────────────────────────────────
-        raw = decide_action(stage_goal, state, memory, step)
+        raw         = decide_action(stage_goal, state, memory, step)
         action_type = raw.get("action", "scroll")
 
         if action_type == "search":
-            q = raw.get("value", stage_goal)
+            q      = raw.get("value", stage_goal)
             action = {"action": "navigate", "value": SEARCH_BASE + q.replace(" ", "+")}
         elif action_type == "finish":
             return True
@@ -199,7 +212,11 @@ def run_stage(page, context, goal, stage, memory, log):
         if not result.get("ok"):
             log.log("action_failed", action=action_type)
 
-        time.sleep(0.5)
+        # Replace fixed sleep with an adaptive load wait (max 3 s)
+        try:
+            page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     return enough_evidence(memory)
 
@@ -209,7 +226,7 @@ def run_stage(page, context, goal, stage, memory, log):
 # ════════════════════════════════════════════════════════════════════════
 def get_browser_and_page(p):
     browser = p.chromium.launch(headless=False)
-    ctx = browser.new_context()
+    ctx     = browser.new_context()
     return browser, ctx, ctx.new_page(), "chromium"
 
 
@@ -218,9 +235,9 @@ def get_browser_and_page(p):
 # ════════════════════════════════════════════════════════════════════════
 def main():
     mission = json.loads(Path(sys.argv[1]).read_text())
-    goal = mission.get("mission_name", "research")
+    goal    = mission.get("mission_name", "research")
 
-    log = EventLogger(OUT_DIR)
+    log    = EventLogger(OUT_DIR)
     memory = Memory()
 
     # ── long-term memory: read phase ──────────────────────────────────────
@@ -241,13 +258,11 @@ def main():
 
         clusters = cluster_claims(memory.evidence) if memory.evidence else []
 
-        if memory.evidence:
-            result = call(
-                f"Synthesize:\n{clusters}",
-                model=MODEL_HEAVY
-            )
-        else:
-            result = "# No evidence collected"
+        result = (
+            call(f"Synthesize:\n{clusters}", model=MODEL_HEAVY)
+            if memory.evidence
+            else "# No evidence collected"
+        )
 
         Path(OUT_DIR).mkdir(exist_ok=True)
         out = OUT_DIR / "result.md"
