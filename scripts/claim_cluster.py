@@ -1,45 +1,55 @@
+"""Claim clustering with improved threshold and length-based early exit (fixes #33-34)."""
 from __future__ import annotations
-import re
+import re, logging
+from collections import defaultdict
 
-STOP = {
-    "the","a","an","and","or","of","to","in","on","for","with","from","at","by",
-    "is","are","was","were","be","been","being","that","this","it","as","after",
-    "before","about","into","over","under","during","officials","report","reported",
-}
+def _tokens(text: str) -> set[str]:
+    return set(re.findall(r'\b[a-z]{4,}\b', text.lower()))
 
-
-def _tok(s: str) -> set:
-    return {t for t in re.findall(r"[A-Za-z0-9]+", (s or "").lower()) if len(t) > 3 and t not in STOP}
-
-
-def _jaccard(a: str, b: str) -> float:
-    ta, tb = _tok(a), _tok(b)
-    if not ta or not tb:
+def _jaccard(a: set, b: set) -> float:
+    if not a or not b:
         return 0.0
-    return len(ta & tb) / max(1, len(ta | tb))
+    return len(a & b) / len(a | b)
 
+JACCARD_THRESHOLD = 0.40
 
-def cluster_claims(evidence: list[dict], threshold: float = 0.22) -> list[dict]:
-    claims = [
-        {"claim": c.get("claim",""), "url": e.get("url",""), "title": e.get("title",""),
-         "score": e.get("score",0), "source_domain": e.get("source_domain","")}
-        for e in evidence for c in e.get("claims",[])
-    ]
-    used = [False] * len(claims)
-    groups: list[list[dict]] = []
-    for i, c in enumerate(claims):
-        if used[i]:
-            continue
-        cluster = [c]; used[i] = True
-        for j in range(i+1, len(claims)):
-            if not used[j] and _jaccard(c["claim"], claims[j]["claim"]) >= threshold:
-                cluster.append(claims[j]); used[j] = True
-        groups.append(cluster)
-    out = []
-    for cluster in groups:
-        domains = sorted({x["source_domain"] for x in cluster if x["source_domain"]})
-        rep = max(cluster, key=lambda x: (x["score"], len(x["claim"])))
-        out.append({"representative_claim": rep["claim"], "items": cluster,
-                    "source_count": len(cluster), "domain_count": len(domains), "domains": domains})
-    out.sort(key=lambda x: (x["domain_count"], x["source_count"]), reverse=True)
-    return out
+def cluster_claims(claims: list[str]) -> list[dict]:
+    if not claims:
+        return []
+
+    token_sets = [_tokens(c) for c in claims]
+    n = len(claims)
+    parent = list(range(n))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(x, y):
+        parent[find(x)] = find(y)
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            li, lj = len(token_sets[i]), len(token_sets[j])
+            if li == 0 or lj == 0:
+                continue
+            if min(li, lj) / max(li, lj) < 0.3:
+                continue
+            if _jaccard(token_sets[i], token_sets[j]) >= JACCARD_THRESHOLD:
+                union(i, j)
+
+    groups = defaultdict(list)
+    for i in range(n):
+        groups[find(i)].append(i)
+
+    result = []
+    for root, members in sorted(groups.items(), key=lambda x: -len(x[1])):
+        representative = claims[members[0]]
+        result.append({
+            "representative_claim": representative,
+            "all_claims": [claims[m] for m in members],
+            "source_count": len(members),
+        })
+    return result
