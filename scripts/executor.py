@@ -1,82 +1,95 @@
+"""Browser action executor with config-driven timeouts, ambiguity guards, batch limits (fixes #25-28)."""
 from __future__ import annotations
+import json, logging
+from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
+_rt = json.loads((ROOT / "configs" / "runtime.json").read_text())
 
-def execute(page, context, action: dict) -> dict:
-    act = action.get("action")
+CLICK_TIMEOUT = _rt.get("click_timeout", 12000)
+NAV_TIMEOUT   = _rt.get("nav_timeout", 8000)
+IDLE_TIMEOUT  = _rt.get("idle_timeout", 2500)
+BATCH_MAX     = 20
+
+def execute(page, context, action: dict, depth: int = 0) -> dict:
+    act  = action.get("action", "")
+    val  = action.get("value", "")
+    text = str(action.get("text") or action.get("selector") or val or "")
 
     if act == "navigate":
         try:
-            page.goto(str(action.get("value", "")), wait_until="domcontentloaded", timeout=12000)
+            page.goto(str(val), timeout=NAV_TIMEOUT, wait_until="domcontentloaded")
+            return {"ok": True}
+        except Exception as e:
+            logging.warning(f"[executor] navigate failed: {e}")
+            return {"ok": False, "error": str(e)}
+
+    elif act == "click":
+        try:
+            matches = page.locator(f"text={text}").all()
+            if len(matches) > 5:
+                logging.warning(f"[executor] click: {len(matches)} matches for '{text}', using first")
+            matches[0].click(timeout=CLICK_TIMEOUT)
+            return {"ok": True}
+        except Exception as e2:
+            return {"ok": False, "error": str(e2)}
+
+    elif act == "type":
+        try:
+            page.keyboard.type(str(val))
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    if act == "click":
-        target = action.get("target") or {}
-        tid = target.get("target_id")
-        if tid:
-            try:
-                loc = page.locator(f'[data-agent-id="{tid}"]')
-                if loc.count() > 0:
-                    loc.first.click(timeout=2500)
-                    return {"ok": True}
-            except Exception:
-                pass
-        txt = (target.get("text") or "").strip()
-        if txt:
-            try:
-                page.get_by_text(txt, exact=False).first.click(timeout=2500)
-                return {"ok": True}
-            except Exception as e:
-                return {"ok": False, "error": str(e)}
-        return {"ok": False, "error": "no clickable target"}
-
-    if act == "fill":
-        target = action.get("target") or {}
-        tid = target.get("target_id")
-        if not tid:
-            return {"ok": False, "error": "missing target_id"}
+    elif act == "fill":
         try:
-            page.locator(f'[data-agent-id="{tid}"]').first.fill(str(action.get("value", "")), timeout=2500)
+            selector = action.get("selector", "input:visible")
+            page.locator(selector).first.fill(str(val), timeout=CLICK_TIMEOUT)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    if act == "press":
+    elif act == "press":
         try:
-            page.keyboard.press(str(action.get("value", "")))
+            page.keyboard.press(str(val))
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    if act == "scroll":
+    elif act == "scroll":
         try:
-            page.mouse.wheel(0, int(action.get("value", 900)))
+            page.evaluate(f"window.scrollBy(0, {int(val or 600)})")
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    if act == "go_back":
+    elif act == "go_back":
         try:
-            page.go_back(wait_until="domcontentloaded", timeout=8000)
+            page.go_back(timeout=NAV_TIMEOUT)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    if act == "get_page_text":
+    elif act == "get_page_text":
+        cached = action.get("_cached_text")
+        if cached:
+            return {"ok": True, "text": cached}
         try:
-            return {"ok": True, "text": page.locator("body").inner_text(timeout=1500)}
+            text_val = page.locator("body").inner_text(timeout=3000)
+            return {"ok": True, "text": text_val}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    if act == "batch":
-        for sub in action.get("actions", []):
-            r = execute(page, context, sub)
+    elif act == "batch":
+        if depth >= 2:
+            return {"ok": False, "error": "batch depth limit reached"}
+        sub_actions = action.get("actions", [])[:BATCH_MAX]
+        results = []
+        for sub in sub_actions:
+            r = execute(page, context, sub, depth=depth + 1)
+            results.append(r)
             if not r.get("ok"):
-                return r
-        return {"ok": True}
-
-    if act == "finish":
-        return {"ok": True, "finish": True, "text": action.get("value", "")}
+                break
+        return {"ok": True, "results": results}
 
     return {"ok": False, "error": f"unknown action: {act}"}
