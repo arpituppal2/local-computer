@@ -51,6 +51,29 @@ HIGH_SCORE_THRESH = 4
 STUCK_THRESHOLD   = 3
 EVIDENCE_GOAL_BASE = 6
 
+# Goals that never need web browsing — matched as substrings (case-insensitive)
+_LOCAL_KEYWORDS = (
+    "test", "hello", "ping", "echo", "debug", "check",
+    "calculate", "compute", "convert", "summarize this",
+    "write a", "generate a", "create a", "list the",
+    "what is 2", "what is 1",
+)
+
+
+def _needs_web(goal: str) -> bool:
+    """Return False for goals that clearly don't need a browser."""
+    g = goal.lower().strip()
+    if any(k in g for k in _LOCAL_KEYWORDS):
+        return False
+    # Ask the planner model to classify — lightweight call
+    verdict = call_json(
+        f"Does answering this goal require browsing the web or searching for "
+        f"current information?\nGoal: {goal}\n"
+        f"Reply with JSON: {{\"needs_web\": true}} or {{\"needs_web\": false}}",
+        model=MODEL_PLANNER,
+    )
+    return bool((verdict or {}).get("needs_web", True))
+
 
 # ── adaptive evidence goal ─────────────────────────────────────────────────
 def adaptive_evidence_goal(memory: Memory) -> int:
@@ -128,7 +151,6 @@ def process_page(state: dict, memory: Memory, log: EventLogger) -> int:
     if len(text) < 200:
         return 0
 
-    # Skip URLs we have already processed (cross-page deduplication)
     if _already_visited(url, memory):
         log.log("page_skip", url=url, reason="already_visited")
         return 0
@@ -252,10 +274,23 @@ def run_mission(plan: dict, root: Path | None = None):
             log.log("ltm_read", chars=len(prior))
             memory.inject_prior_context(prior)
 
+    # ── skip browser entirely for non-web goals ───────────────────────────
+    if not _needs_web(goal):
+        log.log("no_web", goal=goal)
+        result = call(
+            f"Answer the following directly without browsing:\n{goal}",
+            model=MODEL_HEAVY,
+        )
+        Path(OUT_DIR).mkdir(exist_ok=True)
+        (OUT_DIR / "result.md").write_text(result)
+        manage_memory(goal, memory, result)
+        print(result)
+        return result
+
     with sync_playwright() as p:
         browser, ctx, page, mode = get_browser_and_page(p)
 
-        start_url = plan.get("start_url", "https://bing.com")
+        start_url = plan.get("start_url") or (SEARCH_BASE + goal.replace(" ", "+"))
         page.goto(start_url)
 
         for stage in plan.get("stages", []):
