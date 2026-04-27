@@ -38,7 +38,6 @@ RUNTIME = json.loads(RT_FILE.read_text()) if RT_FILE.exists() else {}
 
 OUT_DIR = ROOT / RUNTIME.get("outputs_dir", "outputs")
 LOG_DIR = ROOT / RUNTIME.get("logs_dir", "logs")
-ARC_PORT = RUNTIME.get("arc_debug_port", 9222)
 MAX_STEPS = RUNTIME.get("max_steps_per_stage", 25)
 
 SEARCH_BASE = "https://www.bing.com/search?q="
@@ -196,17 +195,12 @@ def run_stage(page, context, goal, stage, memory, log):
 
 
 # ════════════════════════════════════════════════════════════════════════
-# BROWSER
+# BROWSER — always Playwright Chromium, never Arc
 # ════════════════════════════════════════════════════════════════════════
 def get_browser_and_page(p):
-    try:
-        browser = p.chromium.connect_over_cdp(f"http://localhost:{ARC_PORT}")
-        ctx = browser.contexts[0]
-        return browser, ctx, ctx.new_page(), "arc"
-    except Exception:
-        browser = p.chromium.launch(headless=False)
-        ctx = browser.new_context()
-        return browser, ctx, ctx.new_page(), "chromium"
+    browser = p.chromium.launch(headless=False)
+    ctx = browser.new_context()
+    return browser, ctx, ctx.new_page(), "chromium"
 
 
 # ════════════════════════════════════════════════════════════════════════
