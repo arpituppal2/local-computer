@@ -1,8 +1,13 @@
 {
-  "router":      "qwen3:4b",
-  "planner":     "qwen3:14b",
-  "actor":       "qwen3:4b",
-  "analyst":     "qwen3:14b",
-  "heavy":       "deepseek-r1:14b",
-  "ollama_host": "http://localhost:11434"
+  "router":   "qwen3:4b",
+  "actor":    "qwen3:4b",
+  "planner":  "qwen3:8b",
+  "analyst":  "qwen3:8b",
+  "heavy":    "qwen3:14b",
+  "ollama_host": "http://localhost:11434",
+  "timeouts": {
+    "qwen3:4b":  30,
+    "qwen3:8b":  60,
+    "qwen3:14b": 180
+  }
 }
