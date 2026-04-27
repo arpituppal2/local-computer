@@ -1,63 +1,48 @@
+"""Claim extraction with deduplication, smart truncation, and conservative fallback (fixes #7-10)."""
 from __future__ import annotations
-import json, re, urllib.request
-from pathlib import Path
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from scripts.ollama_client import MODEL_ANALYST, OLLAMA_HOST
+import re, logging
+from scripts.ollama_client import call_json, MODEL_ANALYST
 
-CLAIM_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "claims": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "claim":      {"type": "string"},
-                    "entities":   {"type": "array", "items": {"type": "string"}},
-                    "time":       {"type": "string"},
-                    "confidence": {"type": "number"},
-                },
-                "required": ["claim"],
-            },
-        }
-    },
-    "required": ["claims"],
-}
+_SIGNAL = re.compile(
+    r'\b(found|show|reveal|indicate|report|confirm|according to|study|research|data)\b',
+    re.I
+)
 
+def _cheap_fallback(text: str) -> list[str]:
+    sentences = re.split(r'[.!?;]\s+', text)
+    claims = []
+    for s in sentences:
+        s = s.strip()
+        words = s.split()
+        if len(words) >= 10 and _SIGNAL.search(s):
+            claims.append(s)
+    return claims[:5]
 
-def _cheap(text: str) -> list[dict]:
-    out = []
-    for s in re.split(r"[?.!;]", text)[:12]:
-        ss = " ".join(s.split()).strip()
-        if len(ss) < 40:
-            continue
-        if any(x in ss.lower() for x in ("said","according to","reported","announced","confirmed","filed")):
-            out.append({"claim": ss[:300], "entities": [], "time": "", "confidence": 0.45})
-    return out[:6]
+def _smart_excerpt(text: str, max_chars: int = 4000) -> str:
+    if len(text) <= max_chars:
+        return text
+    half = max_chars // 2
+    return text[:half] + "\n...[truncated]...\n" + text[-half:]
 
+def extract_claims(url: str, text: str, memory) -> list[str]:
+    if url in memory.visited_urls:
+        return []
 
-def extract_claims(title: str, url: str, text: str) -> list[dict]:
-    excerpt = (text or "")[:5000]
+    excerpt = _smart_excerpt(text or "")
     if not excerpt.strip():
         return []
+
     prompt = (
-        f"Extract concise factual claims.\nTitle: {title}\nURL: {url}\nText: {excerpt}\n"
-        "Rules: Return JSON only. 3-8 claims, each <220 chars. Prefer concrete events, numbers, dates. No opinions."
+        f"Extract up to 8 specific, verifiable factual claims from this web page text.\n"
+        f"Return JSON: {{\"claims\": [\"claim1\", \"claim2\", ...]}}\n"
+        f"Only include claims that are concrete and falsifiable. Skip navigation text, ads, or vague statements.\n\n"
+        f"URL: {url}\n\nTEXT:\n{excerpt}"
     )
-    payload = {"model": MODEL_ANALYST, "prompt": prompt, "stream": False,
-               "format": CLAIM_SCHEMA, "options": {"temperature": 0.1}}
-    try:
-        req = urllib.request.Request(
-            f"{OLLAMA_HOST}/api/generate",
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=90) as resp:
-            body = json.loads(resp.read().decode())
-        claims = json.loads(body.get("response","").strip()).get("claims",[])
-        if isinstance(claims, list) and claims:
-            return claims[:8]
-    except Exception:
-        pass
-    return _cheap(excerpt)
+    result = call_json(MODEL_ANALYST, prompt)
+    claims = result.get("claims", [])
+
+    if not isinstance(claims, list) or not claims:
+        logging.info(f"[extractor] LLM returned no claims, using fallback for {url}")
+        claims = _cheap_fallback(text or "")
+
+    return [str(c).strip() for c in claims if str(c).strip()]
