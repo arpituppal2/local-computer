@@ -1,47 +1,42 @@
-"""Simple memory + loop-escape helper (lighter alternative to agent_memory)."""
+"""Unified Memory class — replaces both memory.py and agent_memory.py APIs (fixes #22-24)."""
 from __future__ import annotations
-import hashlib
-
+import hashlib, time
+from collections import deque
 
 class Memory:
-    def __init__(self):
-        self.history = []
-        self.repeated_same_state  = 0
-        self.repeated_same_action = 0
-        self.last_state_sig  = None
-        self.last_action_sig = None
-        self.mode_steps  = {}
-        self.max_budgets = {"search": 12, "browse": 18, "workflow": 32, "respond": 5}
+    def __init__(self, max_history: int = 200):
+        self.history: deque = deque(maxlen=max_history)
+        self.visited_urls: set = set()
+        self.evidence: list = []
+        self.mode_steps: dict = {}
+        self._state_hashes: deque = deque(maxlen=20)
 
-    def get_state_sig(self, state):
-        content = f"{state.get('url','')}|{state.get('title','')}|{state.get('text','')[:250]}"
-        return hashlib.md5(content.encode()).hexdigest()
+    def record(self, action: str, url: str, result: str = ""):
+        self.record_action(action, url, result)
 
-    def record(self, state, action, success, mode):
-        sig     = self.get_state_sig(state)
-        act_sig = str(action)
-        self.repeated_same_state  = self.repeated_same_state  + 1 if sig     == self.last_state_sig  else 0
-        self.repeated_same_action = self.repeated_same_action + 1 if act_sig == self.last_action_sig else 0
-        self.last_state_sig  = sig
-        self.last_action_sig = act_sig
-        self.mode_steps[mode] = self.mode_steps.get(mode, 0) + 1
-        self.history.append({"state": state, "action": action, "success": success, "mode": mode})
+    def record_action(self, action: str, url: str, result: str = ""):
+        self.visited_urls.add(url)
+        entry = {"action": action, "url": url, "result": result, "ts": time.time()}
+        self.history.append(entry)
+        self.mode_steps[action] = self.mode_steps.get(action, 0) + 1
 
-    def is_stuck(self, mode):
-        if self.repeated_same_state >= 4 or self.repeated_same_action >= 4:
+    def is_stuck(self) -> bool:
+        return self.stuck()
+
+    def stuck(self) -> bool:
+        if len(self.history) < 4:
+            return False
+        recent = list(self.history)[-4:]
+        urls = [e.get("url", "") for e in recent]
+        return len(set(urls)) <= 1
+
+    def state_signature(self, url: str, text_snippet: str) -> str:
+        raw = f"{url}::{text_snippet[:200]}"
+        return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+    def is_repeated_state(self, url: str, text_snippet: str) -> bool:
+        sig = self.state_signature(url, text_snippet)
+        if sig in self._state_hashes:
             return True
-        if self.mode_steps.get(mode, 0) > self.max_budgets.get(mode, 99):
-            return True
+        self._state_hashes.append(sig)
         return False
-
-
-def escape_action(state, memory) -> dict:
-    url    = (state.get("url") or "").lower()
-    recent = [str(h.get("action", {}).get("action", "")) for h in memory.history[-3:]]
-    if "bing.com" in url or "google.com" in url:
-        return {"action": "navigate", "value": "https://www.bing.com",
-                "reason": "Hard reset search.", "source": "recovery"}
-    if recent.count("go_back") >= 2:
-        return {"action": "navigate", "value": "https://www.bing.com",
-                "reason": "go_back loop detected.", "source": "recovery"}
-    return {"action": "go_back", "reason": "Recover from loop.", "source": "recovery"}
