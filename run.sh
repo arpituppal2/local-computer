@@ -22,13 +22,16 @@ pip install --quiet --upgrade pip >/dev/null 2>&1 || true
 pip install --quiet -r "$AIDIR/requirements.txt" >/dev/null 2>&1 || true
 
 # --- Playwright Chromium (auto-installs only if missing) ---
-if ! python -c "
+PLAYWRIGHT_OK=0
+python -c "
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     b = p.chromium.launch(headless=True); b.close()
-" 2>/dev/null; then
+" 2>/dev/null && PLAYWRIGHT_OK=1 || true
+
+if [ "$PLAYWRIGHT_OK" -eq 0 ]; then
   echo "[setup] Installing Playwright Chromium (one-time, ~150MB)..."
-  playwright install chromium --with-deps 2>&1 | grep -v '^$' | tail -8
+  playwright install chromium --with-deps 2>&1 | grep -v '^$' | tail -8 || true
 fi
 
 # --- Ollama: start in a new terminal tab if not already running ---
@@ -53,7 +56,7 @@ if ! ollama list >/dev/null 2>&1; then
 
   echo "[setup] Waiting for Ollama to be ready..."
   for i in $(seq 1 20); do
-    ollama list >/dev/null 2>&1 && break
+    ollama list >/dev/null 2>&1 && break || true
     sleep 0.5
   done
   ollama list >/dev/null 2>&1 || { echo "[error] Ollama failed to start. Run 'ollama serve' manually."; exit 1; }
