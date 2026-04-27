@@ -1,111 +1,78 @@
-#!/usr/bin/env python3
-"""Entry point: python scripts/orchestrator.py '<goal>'"""
+"""Mission orchestrator — CDP browser polling, safe int parsing, timestamped outputs (fixes #18-21)."""
 from __future__ import annotations
-import json, subprocess, sys, time
+import json, sys, time, subprocess, logging
 from pathlib import Path
+from datetime import datetime
 
-ROOT = Path(__file__).parent.parent
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from scripts.ollama_client import MODEL_PLANNER, call_json
 
-import requests
+from scripts.ollama_client import call_json, MODEL_PLANNER, MODEL_HEAVY
+from scripts.navigation_agent import run_mission
 
-RT = json.loads((ROOT / "configs" / "runtime.json").read_text())
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+
+_rt_path = ROOT / "configs" / "runtime.json"
+_rt = json.loads(_rt_path.read_text())
 
 
-def ensure_arc() -> None:
-    port = RT.get("arc_debug_port", 9222)
+def _wait_for_browser_ready(port: int, max_wait: float = 10.0, interval: float = 0.5):
+    import httpx
+    deadline = time.time() + max_wait
+    while time.time() < deadline:
+        try:
+            httpx.get(f"http://localhost:{port}/json/version", timeout=1)
+            return True
+        except Exception:
+            time.sleep(interval)
+    return False
+
+
+def _safe_int(val, default: int) -> int:
     try:
-        requests.get(f"http://localhost:{port}/json/version", timeout=1)
-        print(f"[ORCH] Arc alive on :{port}")
-    except Exception:
-        print(f"[ORCH] Launching Arc on :{port}...")
-        import subprocess as sp
-        sp.Popen(["/Applications/Arc.app/Contents/MacOS/Arc",
-                  f"--remote-debugging-port={port}"],
-                 stdout=sp.DEVNULL, stderr=sp.DEVNULL)
-        time.sleep(4)
+        return int(str(val).split("-")[0].strip())
+    except (TypeError, ValueError):
+        return default
 
 
 def plan_mission(goal: str) -> dict:
+    parallel_keywords = ["while also", "simultaneously", "in parallel", "multiple", "&&"]
+    use_heavy = any(k in goal.lower() for k in parallel_keywords)
+    model = MODEL_HEAVY if use_heavy else MODEL_PLANNER
+
     prompt = (
-        "You are a mission planner for a browser agent.\n"
-        "Given a user goal, output ONLY a JSON object with:\n"
-        "  mission_name: short string\n"
-        "  start_url: URL to begin (usually https://www.bing.com)\n"
-        "  stages: list of 2-5 stages, each with name, goal, max_steps (<=25)\n"
-        "No explanations. No markdown.\n\n"
-        f"Goal: {goal}"
+        f"Create a research mission plan for this goal: {goal}
+
+"
+        f"Return JSON:
+"
+        f'{{"mission_name": "...", "stages": [{{"stage": "...", "goal": "...", "max_steps": 15}}]}}'
     )
-    print(f"[ORCH] Planning via {MODEL_PLANNER}...")
-    obj = call_json(prompt, model=MODEL_PLANNER) or {}
-    mission = {
-        "mission_name": obj.get("mission_name") or "auto_mission",
-        "start_url":    obj.get("start_url")    or "https://www.bing.com",
-        "stages": [],
-    }
-    for s in (obj.get("stages") or [])[:5]:
-        if not isinstance(s, dict):
-            continue
-        mission["stages"].append({
-            "name":      s.get("name") or "stage",
-            "goal":      s.get("goal") or goal,
-            "max_steps": min(int(s.get("max_steps") or 15), 25),
-        })
-    if not mission["stages"]:
-        mission["stages"] = [{"name": "main", "goal": goal, "max_steps": 20}]
-    return mission
+    plan = call_json(model, prompt)
+    if not plan or "stages" not in plan:
+        plan = {"mission_name": goal[:60], "stages": [{"stage": "research", "goal": goal, "max_steps": 20}]}
+
+    for s in plan.get("stages", []):
+        s["max_steps"] = _safe_int(s.get("max_steps"), 15)
+
+    out_dir = ROOT / "outputs"
+    out_dir.mkdir(exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    mission_file = out_dir / f"mission_{ts}.json"
+    mission_file.write_text(json.dumps(plan, indent=2))
+    logging.info(f"[orchestrator] Mission plan saved to {mission_file}")
+
+    return plan
 
 
-def main() -> None:
-    if len(sys.argv) < 2:
-        print("Usage: orchestrator.py '<goal>'", file=sys.stderr)
-        raise SystemExit(1)
-    goal = " ".join(sys.argv[1:])
-    ensure_arc()
-    mission = plan_mission(goal)
-    mp = ROOT / "auto_mission.json"
-    mp.write_text(json.dumps(mission, indent=2, ensure_ascii=False))
-    print(f"[ORCH] Mission → {mp}")
-    nav = ROOT / "scripts" / "navigation_agent.py"
-    proc = subprocess.run([sys.executable, str(nav), str(mp)], cwd=str(ROOT))
-    raise SystemExit(proc.returncode)
+def main():
+    goal = " ".join(sys.argv[1:]).strip() or input("Goal: ").strip()
+    if not goal:
+        print("No goal provided."); sys.exit(1)
+
+    plan = plan_mission(goal)
+    run_mission(plan, root=ROOT)
 
 
 if __name__ == "__main__":
     main()
-
-
-from scripts.task_schema import Task
-import json
-import uuid
-
-def build_tasks(goal: str, planner_llm):
-    prompt = f"""
-Break this goal into structured browser automation tasks:
-
-GOAL:
-{goal}
-
-Return JSON:
-[
-  {{
-    "goal": "...",
-    "steps": ["..."]
-  }}
-]
-"""
-
-    raw = planner_llm(prompt)
-
-    tasks_json = json.loads(raw)
-
-    tasks = []
-    for t in tasks_json:
-        tasks.append(Task(
-            id=str(uuid.uuid4()),
-            goal=t["goal"],
-            steps=[{"action": s} for s in t["steps"]]
-        ))
-
-    return tasks
