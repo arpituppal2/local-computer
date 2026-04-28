@@ -41,7 +41,18 @@ _cfg = json.loads(_MODELS_PATH.read_text()) if _MODELS_PATH.exists() else {}
 
 MODEL_PLANNER  = _cfg.get("planner", "qwen3:8b")
 MODEL_HEAVY    = _cfg.get("heavy",   "qwen3:14b")
-CHATBOT_THRESH = _cfg.get("chatbot_threshold", 7)
+CHATBOT_THRESH = _cfg.get("chatbot_threshold", 8)
+
+# Minimum free unified memory (GB) needed to run the heavy model.
+# 14b Q4 ≈ 8 GB; macOS kernel ~2 GB; keep 1 GB headroom → 7.0 GB floor.
+_HEAVY_RAM_GB = 7.0
+
+
+def _can_use_heavy() -> bool:
+    """True if enough unified memory is free to load the heavy model."""
+    import psutil
+    return psutil.virtual_memory().available / (1024 ** 3) >= _HEAVY_RAM_GB
+
 
 # ── Capability modes ──────────────────────────────────────────────────────────
 
@@ -111,6 +122,19 @@ def _default_plan(goal: str) -> list[dict]:
     ]
 
 
+def _pick_planning_model(score: int) -> str:
+    """Return the best available planning model given current RAM.
+
+    Heavy model (14b) is only used when:
+      - score >= CHATBOT_THRESH (truly complex task), AND
+      - enough unified memory is free (_can_use_heavy())
+    Otherwise fall back to planner (8b).
+    """
+    if score >= CHATBOT_THRESH and _can_use_heavy():
+        return MODEL_HEAVY
+    return MODEL_PLANNER
+
+
 # ── Phase 1: Capability Assessment ───────────────────────────────────────────
 
 _CAPABILITY_PROMPT = """\
@@ -150,7 +174,7 @@ def assess_capabilities(goal: str) -> CapabilityPlan:
     from scripts.router import complexity_score
 
     score = complexity_score(goal)
-    model = MODEL_HEAVY if score >= CHATBOT_THRESH - 1 else MODEL_PLANNER
+    model = _pick_planning_model(score)
 
     raw = call_json(_CAPABILITY_PROMPT.format(goal=goal), model=model)
 
@@ -229,7 +253,7 @@ def build_task_graph(
         cap = assess_capabilities(goal)
 
     score = complexity_score(goal)
-    model = MODEL_HEAVY if score >= CHATBOT_THRESH - 1 else MODEL_PLANNER
+    model = _pick_planning_model(score)
 
     prompt = _TASK_PROMPT.format(
         goal=goal,

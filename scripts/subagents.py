@@ -25,11 +25,11 @@ MODEL_PLANNER = _MODELS.get("planner", "qwen3:8b")
 MODEL_HEAVY   = _MODELS.get("heavy",   "qwen3:14b")
 
 # If task complexity_score >= this, route to chatbot UI instead of local 14b
-CHATBOT_THRESHOLD = _MODELS.get("chatbot_threshold", 7)
+CHATBOT_THRESHOLD = _MODELS.get("chatbot_threshold", 8)
 
 # Max simultaneous local Ollama subagents
-# 3 × qwen3:4b ≈ 4.5 GB; leaves headroom for Chromium + planner
-MAX_LOCAL_PARALLEL = _MODELS.get("max_local_parallel", 3)
+# router+actor are qwen3:4b (~2.5GB each); 2 parallel fits without swapping.
+MAX_LOCAL_PARALLEL = _MODELS.get("max_local_parallel", 2)
 
 CLOUD_BACKENDS = {
     "cloud_run":    {"check_cmd": "gcloud config get-value project"},
@@ -46,9 +46,14 @@ def _available_ram_gb() -> float:
 
 
 def _ram_ok_for_heavy() -> bool:
-    """Is there enough free RAM to run qwen3:14b alongside Chromium?"""
-    # 14b Q4 ≈ 8 GB; Chromium ≈ 0.5 GB; keep 1 GB headroom → need ~9.5 GB free
-    return _available_ram_gb() >= 9.5
+    """Is there enough free RAM to run qwen3:14b?
+
+    14b Q4 ≈ 8 GB in unified memory.
+    On 16GB with macOS kernel (~2GB) + Chromium (~1.5GB) we typically have
+    ~7.5 GB free when idle — just enough. Threshold: 7.0 GB so the check
+    passes in practice instead of always falling back to planner.
+    """
+    return _available_ram_gb() >= 7.0
 
 
 def _backend_available(name: str) -> bool:
@@ -132,9 +137,12 @@ def dispatch(task: Dict[str, Any]) -> Dict[str, Any]:
     if not local_only and worker_url:
         return _run_cloud_worker(task, worker_url)
 
-    # 3. Local heavy model — but only if we have the RAM
+    # 3. Local heavy model — only if we have enough unified memory
     if not _ram_ok_for_heavy() and "heavy" in task.get("preferred_model", ""):
-        logging.warning("[subagents] Insufficient RAM for heavy model; using planner instead")
+        logging.warning(
+            f"[subagents] Only {_available_ram_gb():.1f} GB free — "
+            "heavy model needs 7.0 GB; downgrading to planner model"
+        )
 
     return _run_locally(task)
 

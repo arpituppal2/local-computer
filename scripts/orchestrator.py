@@ -29,6 +29,7 @@ from scripts.task_planner import (
     build_task_graph, tasks_to_stages,
     assess_capabilities, CapabilityPlan,
     HEADLESS_ROLES, BROWSER_ROLES, ONLINE_ROLES,
+    _can_use_heavy,
 )
 from scripts.agent_roles import get_agent
 
@@ -61,7 +62,9 @@ def _safe_int(val, default: int) -> int:
 
 def plan_mission(goal: str) -> dict:
     parallel_keywords = ["while also", "simultaneously", "in parallel", "multiple", "&&"]
-    use_heavy = any(k in goal.lower() for k in parallel_keywords)
+    # Only use the heavy model if RAM allows — avoids silent 14b→8b downgrade
+    # mid-task which wastes the swap cost without the quality benefit.
+    use_heavy = any(k in goal.lower() for k in parallel_keywords) and _can_use_heavy()
     model = MODEL_HEAVY if use_heavy else MODEL_PLANNER
 
     prompt = (
@@ -130,12 +133,17 @@ def _execute_task_graph(goal: str) -> str:
             if not pending:
                 break
             pending.sort(key=lambda t: t["priority"])
-            threads = [
-                threading.Thread(target=_run_task, args=(t, page, context), daemon=True)
-                for t in pending
-            ]
-            for th in threads: th.start()
-            for th in threads: th.join()
+            # Only spin up threads when there are truly parallel tasks;
+            # for a single pending task run inline to avoid thread overhead.
+            if len(pending) == 1:
+                _run_task(pending[0], page, context)
+            else:
+                threads = [
+                    threading.Thread(target=_run_task, args=(t, page, context), daemon=True)
+                    for t in pending
+                ]
+                for th in threads: th.start()
+                for th in threads: th.join()
 
     # ─ Phase 3: execute with minimum required resources ──────────────────
     if cap.needs_browser:

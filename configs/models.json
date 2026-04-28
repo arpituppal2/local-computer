@@ -1,13 +1,13 @@
 {
-  "router":   "qwen3:8b",
-  "actor":    "qwen3:8b",
+  "router":   "qwen3:4b",
+  "actor":    "qwen3:4b",
   "planner":  "qwen3:8b",
   "analyst":  "qwen3:8b",
   "heavy":    "qwen3:14b",
   "ollama_host": "http://localhost:11434",
 
-  "_comment_thresholds": "chatbot_threshold: complexity score (0-10) at or above which tasks are routed to AI chatbot UI instead of local Ollama. max_local_parallel: max simultaneous workers — aligned with OLLAMA_MAX_LOADED_MODELS in run.sh to prevent model-swap thrashing on 16GB.",
-  "chatbot_threshold": 7,
+  "_comment_thresholds": "chatbot_threshold: complexity score (0-10) at or above which tasks are routed to AI chatbot UI instead of local Ollama. max_local_parallel: max simultaneous workers — aligned with OLLAMA_MAX_LOADED_MODELS=1 in run.sh. Router+actor use qwen3:4b (~2.5GB) so two concurrent actor calls fit without touching the planner/analyst 8b slot.",
+  "chatbot_threshold": 8,
   "max_local_parallel": 2,
 
   "_comment_context": "context_sizes: KV-cache window per model. Kept small to reduce unified-memory pressure on 16GB M4. Increase only if tasks require longer context.",
