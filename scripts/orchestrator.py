@@ -27,6 +27,11 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 _rt_path = ROOT / "configs" / "runtime.json"
 _rt = json.loads(_rt_path.read_text()) if _rt_path.exists() else {}
 
+# Roles that never need a real browser page — run headlessly against Ollama only
+_HEADLESS_ROLES = {"writer", "analyst", "planner", "critic", "summarizer"}
+# Roles that need an actual browser context open
+_BROWSER_ROLES  = {"browser", "researcher", "navigator", "actor"}
+
 
 def _wait_for_browser_ready(port: int, max_wait: float = 10.0, interval: float = 0.5):
     import httpx
@@ -82,13 +87,18 @@ def plan_mission(goal: str) -> dict:
 
 # ── New: multi-agent task-graph execution ─────────────────────────────────────
 
+def _needs_browser(tasks: list[dict]) -> bool:
+    """Return True only if at least one task requires a live browser page."""
+    return any(t.get("role", "") in _BROWSER_ROLES for t in tasks)
+
+
 def _execute_task_graph(goal: str) -> str:
     """Decompose goal → task DAG → execute each task with its specialist agent.
 
-    Tasks with no unfulfilled dependencies are dispatched in parallel.
-    Results are accumulated and passed as context to dependent tasks.
+    Browser (Chromium) is launched lazily — only when a task role actually
+    needs web navigation.  Pure writer/analyst/planner tasks run entirely
+    inside Ollama without ever touching Chrome.
     """
-    from playwright.sync_api import sync_playwright
     from scripts.memory import Memory
     from scripts.navigation_agent import SEARCH_BASE
     import threading
@@ -100,6 +110,9 @@ def _execute_task_graph(goal: str) -> str:
     memory = Memory()
     results_lock = threading.Lock()
 
+    # Decide upfront whether we even need a browser
+    browser_needed = _needs_browser(tasks)
+
     def _run_task(task: dict, page, context):
         agent  = get_agent(task["role"])
         result = agent.run(task, page=page, context=context, memory=memory)
@@ -110,28 +123,39 @@ def _execute_task_graph(goal: str) -> str:
     def _ready(task: dict) -> bool:
         return all(d in completed for d in task["depends_on"])
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
-        ctx     = browser.new_context()
-        page    = ctx.new_page()
-        page.goto(SEARCH_BASE + goal.replace(" ", "+"))
+    def _execute_with_browser():
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            ctx     = browser.new_context()
+            page    = ctx.new_page()
+            page.goto(SEARCH_BASE + goal.replace(" ", "+"))
+            _run_rounds(page, ctx)
+            browser.close()
 
+    def _execute_headless():
+        _run_rounds(page=None, context=None)
+
+    def _run_rounds(page, context):
         max_rounds = len(tasks) + 2
         for _ in range(max_rounds):
             pending = [t for t in tasks if t["id"] not in completed and _ready(t)]
             if not pending:
                 break
-
-            # Sort by priority, run ready tasks in parallel threads
             pending.sort(key=lambda t: t["priority"])
             threads = [
-                threading.Thread(target=_run_task, args=(t, page, ctx), daemon=True)
+                threading.Thread(target=_run_task, args=(t, page, context), daemon=True)
                 for t in pending
             ]
             for th in threads: th.start()
             for th in threads: th.join()
 
-        browser.close()
+    if browser_needed:
+        logging.info("[orchestrator] Browser tasks detected — launching Chromium")
+        _execute_with_browser()
+    else:
+        logging.info("[orchestrator] No browser tasks — running headless (Ollama only)")
+        _execute_headless()
 
     # Collect writer output, else fall back to analyst, else concatenate findings
     for role in ("writer", "analyst", "researcher"):
