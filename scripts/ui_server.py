@@ -18,6 +18,7 @@ POST /api/login_deny       → skip the login entirely
 from __future__ import annotations
 import argparse
 import json
+import os
 import queue
 import threading
 import time
@@ -31,36 +32,40 @@ from flask_cors import CORS
 ROOT      = Path(__file__).resolve().parent.parent
 DASHBOARD = ROOT / "dashboard"
 
+# Persistent Playwright profile — survives across runs, stores cookies/session
+BROWSER_PROFILE = ROOT / "browser_profile"
+BROWSER_PROFILE.mkdir(exist_ok=True)
+
 app = Flask(__name__, static_folder=str(DASHBOARD), static_url_path="")
 CORS(app)
 
-# ── Shared state ─────────────────────────────────────────────────────────────────────────────
+# ── Shared state ──────────────────────────────────────────────────────────
 
 _state_lock = threading.Lock()
 _state: dict[str, Any] = {
-    "status":       "idle",
-    "goal":         "",
-    "current_task": "",
-    "agent_role":   "",
-    "step":         0,
-    "total_steps":  0,
-    "url":          "",
-    "result":       "",
-    "error":        "",
-    "tasks":        [],
-    "timeline":     [],
+    "status":        "idle",
+    "goal":          "",
+    "current_task":  "",
+    "agent_role":    "",
+    "step":          0,
+    "total_steps":   0,
+    "url":           "",
+    "result":        "",
+    "error":         "",
+    "tasks":         [],
+    "timeline":      [],
     "login_pending": False,
     "login_site":    "",
 }
 
-_event_queue:        queue.Queue  = queue.Queue(maxsize=500)
-_permission_event    = threading.Event()
-_permission_response: dict        = {}
-_cancel_event        = threading.Event()
+_event_queue:         queue.Queue  = queue.Queue(maxsize=500)
+_permission_event     = threading.Event()
+_permission_response: dict         = {}
+_cancel_event         = threading.Event()
 _mission_thread: threading.Thread | None = None
-_inject_queue: queue.Queue = queue.Queue(maxsize=32)
+_inject_queue:   queue.Queue       = queue.Queue(maxsize=32)
 _login_event     = threading.Event()
-_login_response: dict = {}
+_login_response: dict              = {}
 
 
 def _push(kind: str, text: str, **extra):
@@ -78,7 +83,7 @@ def _set_state(**kw):
         _state.update(kw)
 
 
-# ── Permission bridge ────────────────────────────────────────────────────────────────────
+# ── Permission bridge ─────────────────────────────────────────────────────
 
 def request_permission(action_type: str, description: str, details: dict | None = None) -> bool:
     global _permission_response
@@ -98,7 +103,7 @@ def request_permission(action_type: str, description: str, details: dict | None 
     return approved
 
 
-# ── Login bridge ───────────────────────────────────────────────────────────────────────────
+# ── Login bridge ──────────────────────────────────────────────────────────
 
 def request_login(site: str, page) -> bool:
     global _login_response
@@ -139,7 +144,7 @@ def get_login_creds() -> dict:
             if k in ("username", "password", "email")}
 
 
-# ── Injection ────────────────────────────────────────────────────────────────────────────────
+# ── Injection ─────────────────────────────────────────────────────────────
 
 def pop_injected_instruction() -> str | None:
     try:
@@ -148,7 +153,7 @@ def pop_injected_instruction() -> str | None:
         return None
 
 
-# ── Mission runner ───────────────────────────────────────────────────────────────────────────
+# ── Memory proxy ──────────────────────────────────────────────────────────
 
 class _UIMemoryProxy:
     def __init__(self):
@@ -170,6 +175,8 @@ class _UIMemoryProxy:
     def pop_injected_instruction(self) -> str | None:
         return pop_injected_instruction()
 
+
+# ── Mission runner ────────────────────────────────────────────────────────
 
 def _run_mission_thread(goal: str):
     try:
@@ -204,9 +211,13 @@ def _run_mission_thread(goal: str):
             return all(d in completed for d in task["depends_on"])
 
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=False)
-            ctx     = browser.new_context()
-            page    = ctx.new_page()
+            # ── Persistent context: remembers cookies/sessions across runs
+            ctx  = pw.chromium.launch_persistent_context(
+                str(BROWSER_PROFILE),
+                headless=False,
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            page = ctx.pages[0] if ctx.pages else ctx.new_page()
 
             max_rounds = len(tasks) + 4
             for round_i in range(max_rounds):
@@ -286,7 +297,7 @@ def _run_mission_thread(goal: str):
                     _push("task_done", snippet, task_id=t["id"],
                           role=t["role"], status=result.get("status"))
 
-            browser.close()
+            ctx.close()   # close persistent context (not browser.close)
 
         final = ""
         for role in ("writer", "analyst", "researcher"):
@@ -316,7 +327,7 @@ def _run_mission_thread(goal: str):
         _push("error", str(exc), traceback=tb)
 
 
-# ── Flask routes ──────────────────────────────────────────────────────────────────────────────
+# ── Flask routes ──────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -367,7 +378,7 @@ def sse_events():
                 evt = _event_queue.get(timeout=20)
                 yield f"data: {json.dumps(evt)}\n\n"
             except queue.Empty:
-                yield "data: {\"kind\": \"heartbeat\"}\n\n"
+                yield 'data: {"kind": "heartbeat"}\n\n'
     return Response(generate(), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 

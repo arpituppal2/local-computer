@@ -1,19 +1,16 @@
 """Specialist agent roles — Perplexity Computer parity.
 
-Each role wraps the shared action primitives (observe/execute) with
-role-specific prompting, tool sets, and decision logic so each agent
-acts like a domain expert rather than a generic browser bot.
-
 Roles:
   ResearcherAgent  — web search, page reading, claim extraction
   AnalystAgent     — evidence synthesis and cross-referencing
   CoderAgent       — writes + runs Python; returns stdout as findings
   WriterAgent      — drafts structured markdown answer/report
-  BrowserAgent     — pure low-level browser automation (click/fill/drag)
+  BrowserAgent     — multi-step browser automation with re-observe loop
   FileAgent        — reads/writes local files
 """
 from __future__ import annotations
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -36,17 +33,11 @@ class _BaseAgent:
 # ════════════════════════════════════════════════════════════════════════════
 
 class ResearcherAgent(_BaseAgent):
-    """Drives the browser to search and extract information.
-
-    Delegates to the existing navigation_agent stage loop so all
-    existing evidence/memory plumbing is reused.
-    """
     role = "researcher"
 
     def run(self, task: dict, page=None, context=None, memory=None) -> dict:
         from scripts.navigation_agent import run_stage
         from scripts.event_logger import EventLogger
-        from pathlib import Path
         ROOT = Path(__file__).resolve().parent.parent
         log = EventLogger(ROOT / "outputs")
 
@@ -67,14 +58,13 @@ class ResearcherAgent(_BaseAgent):
 # ════════════════════════════════════════════════════════════════════════════
 
 class AnalystAgent(_BaseAgent):
-    """Synthesizes evidence gathered by ResearcherAgent(s)."""
     role = "analyst"
 
     def run(self, task: dict, page=None, context=None, memory=None) -> dict:
         evidence_text = ""
         if memory and memory.evidence:
             evidence_text = "\n\n".join(
-                f"Source: {e.get('url')}\n" + "\n".join(e.get("claims", []))
+                f"Source: {e.get('url')}\nClaims: " + "\n".join(e.get("claims", []))
                 for e in memory.evidence[:12]
             )
 
@@ -93,7 +83,6 @@ class AnalystAgent(_BaseAgent):
 # ════════════════════════════════════════════════════════════════════════════
 
 class CoderAgent(_BaseAgent):
-    """Writes Python code, executes it, and returns the output."""
     role = "coder"
 
     def run(self, task: dict, page=None, context=None, memory=None) -> dict:
@@ -123,7 +112,6 @@ class CoderAgent(_BaseAgent):
 # ════════════════════════════════════════════════════════════════════════════
 
 class WriterAgent(_BaseAgent):
-    """Produces the final structured markdown answer."""
     role = "writer"
 
     def run(self, task: dict, page=None, context=None, memory=None) -> dict:
@@ -146,12 +134,33 @@ class WriterAgent(_BaseAgent):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# Browser (pure automation)
+# Browser (multi-step re-observe loop)
 # ════════════════════════════════════════════════════════════════════════════
 
+# Actions the LLM can emit
+_VALID_ACTIONS = {
+    "click", "fill", "goto", "wait", "scroll",
+    "press", "select", "hover", "done",
+}
+
+# Keywords that signal the page is waiting for the user to sign in
+_LOGIN_SIGNALS = [
+    "sign in", "log in", "login", "sign into", "google accounts",
+    "accounts.google.com", "enter your email", "enter your password",
+    "forgot password", "create account", "use your google account",
+]
+
+
 class BrowserAgent(_BaseAgent):
-    """Executes an LLM-planned sequence of low-level browser actions."""
+    """Multi-step browser automation.
+
+    Runs a tight observe → plan → execute loop so the LLM can react
+    to page state after every action (navigation, dialogs, login walls, etc.).
+    Automatically surfaces login walls to the UI permission system.
+    """
     role = "browser"
+    MAX_STEPS = 30          # hard cap per task
+    WAIT_AFTER_NAV = 1.2    # seconds to let page settle after goto/click
 
     def run(self, task: dict, page=None, context=None, memory=None) -> dict:
         if page is None:
@@ -160,34 +169,136 @@ class BrowserAgent(_BaseAgent):
         from scripts.observer import observe
         from scripts.executor import execute
 
-        state   = observe(page)
-        prompt  = (
-            f"You are a browser automation agent.\n"
-            f"TASK: {task['goal']}\n\n"
-            f"CURRENT PAGE: {state['url']}\n"
-            f"VISIBLE TEXT (truncated):\n{state['visible_text'][:800]}\n\n"
-            f"INTERACTIVE ELEMENTS (first 20):\n"
-            + "\n".join(
-                f"[{t['target_id']}] {t['kind']} '{t['text'][:60]}' at ({t['x']},{t['y']})"
-                for t in state["candidate_targets"][:20]
-            ) +
-            "\n\nReturn a JSON list of actions to perform: "
-            '[{"action": "click", "x": 120, "y": 340}, ...] or '
-            '[{"action": "fill", "selector": "input[name=q]", "value": "..."}]'
-        )
-        plan = call_json(prompt, model=MODEL_ACTOR) or {}
-        actions = plan.get("actions", plan) if isinstance(plan, dict) else plan
-        if not isinstance(actions, list):
-            actions = []
+        goal        = task["goal"]
+        step        = 0
+        history     = []   # brief log of what happened so LLM has context
+        findings    = ""
 
-        results = []
-        for act in actions[:task.get("max_steps", 10)]:
-            r = execute(page, context, act)
-            results.append(r)
-            if not r.get("ok"):
-                logging.warning(f"[BrowserAgent] action failed: {r}")
+        while step < self.MAX_STEPS:
+            step += 1
 
-        return {"role": self.role, "findings": str(results), "status": "done"}
+            # ── 1. Observe ────────────────────────────────────────────────
+            try:
+                state = observe(page)
+            except Exception as e:
+                logging.warning(f"[BrowserAgent] observe failed: {e}")
+                break
+
+            url          = state.get("url", "")
+            visible_text = state.get("visible_text", "")[:1000]
+            targets      = state.get("candidate_targets", [])[:24]
+
+            # ── 2. Check for login wall ───────────────────────────────────
+            combined = (url + " " + visible_text).lower()
+            on_login_page = any(sig in combined for sig in _LOGIN_SIGNALS)
+
+            if on_login_page and memory is not None:
+                # Surface to the UI — user can provide creds or take over
+                handled = memory.request_login(url, page)
+                if handled:
+                    creds = memory.get_login_creds()
+                    if creds.get("email") or creds.get("username"):
+                        # Try to fill the form automatically
+                        _autofill_login(page, creds)
+                    # Re-observe after login attempt
+                    time.sleep(self.WAIT_AFTER_NAV)
+                    continue
+                # User denied — stop trying to log in
+                findings = "[login required but denied by user]"
+                break
+
+            # ── 3. Build prompt with full page state ──────────────────────
+            targets_str = "\n".join(
+                f"[{t['target_id']}] {t['kind']} '{t['text'][:55]}' @({t['x']},{t['y']})"
+                for t in targets
+            )
+            history_str = "\n".join(history[-6:])  # last 6 steps for context
+
+            prompt = (
+                f"You are a browser automation agent completing a multi-step task.\n"
+                f"GOAL: {goal}\n\n"
+                f"STEP: {step}/{self.MAX_STEPS}\n"
+                f"CURRENT URL: {url}\n"
+                f"PAGE TEXT (truncated):\n{visible_text}\n\n"
+                f"INTERACTIVE ELEMENTS:\n{targets_str}\n\n"
+                f"RECENT ACTIONS:\n{history_str}\n\n"
+                "Decide the SINGLE next action to get closer to the goal.\n"
+                "If the goal is complete, return {\"action\": \"done\", \"findings\": \"<summary>\"}\n"
+                "Otherwise return ONE of:\n"
+                '  {"action": "goto",   "url": "https://..."}\n'
+                '  {"action": "click",  "x": 120, "y": 340}\n'
+                '  {"action": "fill",   "selector": "css-selector", "value": "text"}\n'
+                '  {"action": "press",  "key": "Enter"}\n'
+                '  {"action": "wait",   "ms": 1500}\n'
+                "Return ONLY raw JSON, no prose."
+            )
+
+            # ── 4. Plan (one action at a time) ───────────────────────────
+            raw = call_json(prompt, model=MODEL_ACTOR)
+            if not raw or not isinstance(raw, dict):
+                logging.warning(f"[BrowserAgent] invalid LLM response at step {step}: {raw}")
+                break
+
+            action = raw.get("action", "")
+            if action not in _VALID_ACTIONS:
+                logging.warning(f"[BrowserAgent] unknown action '{action}' — stopping")
+                break
+
+            # ── 5. Done signal ────────────────────────────────────────────
+            if action == "done":
+                findings = raw.get("findings", f"Task completed after {step} steps.")
+                break
+
+            # ── 6. Execute ────────────────────────────────────────────────
+            result = execute(page, context, raw)
+            ok     = result.get("ok", False)
+            history.append(f"Step {step}: {action} → {'ok' if ok else 'FAILED: '+str(result.get('error',''))}")
+
+            if not ok:
+                logging.warning(f"[BrowserAgent] step {step} failed: {result}")
+                # Don't hard-stop — let LLM try to recover on next observe
+
+            # ── 7. Wait for page to settle after navigation ───────────────
+            if action in ("goto", "click", "press"):
+                time.sleep(self.WAIT_AFTER_NAV)
+
+        if not findings:
+            findings = f"Browser task ran {step} steps. Last URL: {page.url}"
+
+        return {"role": self.role, "findings": findings, "status": "done"}
+
+
+def _autofill_login(page, creds: dict):
+    """Best-effort form fill for common login selectors."""
+    from scripts.executor import execute
+    email = creds.get("email") or creds.get("username", "")
+    pw    = creds.get("password", "")
+
+    EMAIL_SELECTORS = [
+        'input[type="email"]', 'input[name="email"]',
+        'input[name="username"]', 'input[name="identifier"]',
+        'input[autocomplete="username"]', 'input[autocomplete="email"]',
+    ]
+    PW_SELECTORS = [
+        'input[type="password"]', 'input[name="password"]',
+        'input[autocomplete="current-password"]',
+    ]
+
+    for sel in EMAIL_SELECTORS:
+        r = execute(page, None, {"action": "fill", "selector": sel, "value": email})
+        if r.get("ok"):
+            break
+
+    execute(page, None, {"action": "press", "key": "Enter"})
+    time.sleep(0.8)
+
+    for sel in PW_SELECTORS:
+        r = execute(page, None, {"action": "fill", "selector": sel, "value": pw})
+        if r.get("ok"):
+            break
+
+    execute(page, None, {"action": "press", "key": "Enter"})
+    time.sleep(1.5)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -195,7 +306,6 @@ class BrowserAgent(_BaseAgent):
 # ════════════════════════════════════════════════════════════════════════════
 
 class FileAgent(_BaseAgent):
-    """Reads or writes local files as directed by the task goal."""
     role = "file"
 
     def run(self, task: dict, page=None, context=None, memory=None) -> dict:
@@ -249,6 +359,5 @@ _REGISTRY: dict[str, type[_BaseAgent]] = {
 
 
 def get_agent(role: str) -> _BaseAgent:
-    """Return an instantiated agent for the given role string."""
     cls = _REGISTRY.get(role.lower(), ResearcherAgent)
     return cls()
