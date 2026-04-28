@@ -1,30 +1,68 @@
-"""Browser action executor with config-driven timeouts, ambiguity guards, batch limits."""
+"""Browser action executor — click, type, fill, scroll, hover, drag, screenshot,
+file read/write, code execution, and batch actions.
+
+New actions vs previous version:
+  mouse_move   — move cursor to (x, y) absolute page coords
+  hover        — hover over element text or CSS selector
+  drag         — drag from (x1,y1) to (x2,y2)
+  screenshot   — save a screenshot to outputs/
+  read_file    — read a local file and return its text
+  write_file   — write text to a local file
+  run_code     — run a Python snippet in a subprocess and return stdout
+  open_tab     — open a new browser tab to a URL
+  close_tab    — close the current tab
+  wait         — sleep N ms
+"""
 from __future__ import annotations
-import json, logging
+import json
+import logging
+import subprocess
+import sys
+import time
+import textwrap
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 _rt = json.loads((ROOT / "configs" / "runtime.json").read_text())
 
 CLICK_TIMEOUT = _rt.get("click_timeout", 12000)
-NAV_TIMEOUT   = _rt.get("nav_timeout", 8000)
-IDLE_TIMEOUT  = _rt.get("idle_timeout", 2500)
+NAV_TIMEOUT   = _rt.get("nav_timeout",   8000)
+IDLE_TIMEOUT  = _rt.get("idle_timeout",  2500)
 BATCH_MAX     = 20
+OUT_DIR       = ROOT / _rt.get("outputs_dir", "outputs")
 
 
 def _wait_for_load(page, timeout: int = 3000) -> None:
-    """Wait for page to settle after navigation or click; silently ignores timeout."""
     try:
         page.wait_for_load_state("domcontentloaded", timeout=timeout)
     except Exception:
-        pass  # page may already be loaded or navigation may not have started
+        pass
 
 
-def execute(page, context, action: dict, depth: int = 0) -> dict:
-    act  = action.get("action", "")
-    val  = action.get("value", "")
+def _locate(page, text: str, timeout: int = CLICK_TIMEOUT):
+    """Resolve a target: try exact text, then contains-text, then CSS selector."""
+    for loc in [
+        page.get_by_text(text, exact=True),
+        page.locator(f"text={text}"),
+        page.locator(text) if text.startswith(("#", ".", "[", "//")) else None,
+    ]:
+        if loc is None:
+            continue
+        try:
+            if loc.first.is_visible(timeout=1000):
+                return loc.first
+        except Exception:
+            pass
+    return None
+
+
+def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
+    act = action.get("action", "")
+    val = action.get("value", "")
     text = str(action.get("text") or action.get("selector") or val or "")
 
+    # ── Navigation ────────────────────────────────────────────────────────
     if act == "navigate":
         try:
             page.goto(str(val), timeout=NAV_TIMEOUT, wait_until="domcontentloaded")
@@ -33,23 +71,67 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:
             logging.warning(f"[executor] navigate failed: {e}")
             return {"ok": False, "error": str(e)}
 
+    # ── Click ─────────────────────────────────────────────────────────────
     elif act == "click":
+        # Prefer coordinate click if x/y provided (more reliable on dynamic UIs)
+        x, y = action.get("x"), action.get("y")
+        if x is not None and y is not None:
+            try:
+                page.mouse.click(float(x), float(y))
+                _wait_for_load(page)
+                return {"ok": True}
+            except Exception as e:
+                return {"ok": False, "error": str(e)}
+        loc = _locate(page, text)
+        if loc is None:
+            return {"ok": False, "error": f"no element found for '{text}'"}
         try:
-            matches = page.locator(f"text={text}").all()
-            if not matches:
-                # Fallback: try CSS selector if text looks like one
-                if text.startswith(("#", ".", "[")):
-                    matches = page.locator(text).all()
-            if not matches:
-                return {"ok": False, "error": f"no elements found for '{text}'"}
-            if len(matches) > 5:
-                logging.warning(f"[executor] click: {len(matches)} matches for '{text}', using first")
-            matches[0].click(timeout=CLICK_TIMEOUT)
-            _wait_for_load(page)  # wait for any navigation triggered by click
+            loc.click(timeout=CLICK_TIMEOUT)
+            _wait_for_load(page)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Hover ─────────────────────────────────────────────────────────────
+    elif act == "hover":
+        x, y = action.get("x"), action.get("y")
+        if x is not None and y is not None:
+            try:
+                page.mouse.move(float(x), float(y))
+                return {"ok": True}
+            except Exception as e:
+                return {"ok": False, "error": str(e)}
+        loc = _locate(page, text)
+        if loc is None:
+            return {"ok": False, "error": f"no element found for '{text}'"}
+        try:
+            loc.hover(timeout=CLICK_TIMEOUT)
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Mouse move (absolute page coords) ────────────────────────────────
+    elif act == "mouse_move":
+        try:
+            page.mouse.move(float(action.get("x", 0)), float(action.get("y", 0)))
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Drag ──────────────────────────────────────────────────────────────
+    elif act == "drag":
+        try:
+            x1, y1 = float(action["x1"]), float(action["y1"])
+            x2, y2 = float(action["x2"]), float(action["y2"])
+            page.mouse.move(x1, y1)
+            page.mouse.down()
+            page.mouse.move(x2, y2, steps=10)
+            page.mouse.up()
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Type (raw keyboard) ───────────────────────────────────────────────
     elif act == "type":
         try:
             page.keyboard.type(str(val))
@@ -57,6 +139,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Fill (form input) ─────────────────────────────────────────────────
     elif act == "fill":
         try:
             selector = action.get("selector", "input:visible")
@@ -65,21 +148,27 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Press (keyboard key) ──────────────────────────────────────────────
     elif act == "press":
         try:
             page.keyboard.press(str(val))
-            _wait_for_load(page)  # Enter / Return may navigate
+            _wait_for_load(page)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Scroll ────────────────────────────────────────────────────────────
     elif act == "scroll":
+        direction = str(action.get("direction", "down")).lower()
+        amount    = int(val or action.get("amount", 600))
+        delta_y   = amount if direction == "down" else -amount
         try:
-            page.evaluate(f"window.scrollBy(0, {int(val or 600)})")
+            page.evaluate(f"window.scrollBy(0, {delta_y})")
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Go back ───────────────────────────────────────────────────────────
     elif act == "go_back":
         try:
             page.go_back(timeout=NAV_TIMEOUT)
@@ -88,16 +177,105 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Screenshot ────────────────────────────────────────────────────────
+    elif act == "screenshot":
+        try:
+            OUT_DIR.mkdir(parents=True, exist_ok=True)
+            name = action.get("filename") or f"screenshot_{int(time.time())}.png"
+            path = OUT_DIR / name
+            page.screenshot(path=str(path), full_page=action.get("full_page", False))
+            return {"ok": True, "path": str(path)}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Get page text ─────────────────────────────────────────────────────
     elif act == "get_page_text":
         cached = action.get("_cached_text")
         if cached:
             return {"ok": True, "text": cached}
         try:
-            text_val = page.locator("body").inner_text(timeout=3000)
-            return {"ok": True, "text": text_val}
+            t = page.locator("body").inner_text(timeout=3000)
+            return {"ok": True, "text": t}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Open new tab ──────────────────────────────────────────────────────
+    elif act == "open_tab":
+        try:
+            new_page = context.new_page()
+            if val:
+                new_page.goto(str(val), timeout=NAV_TIMEOUT, wait_until="domcontentloaded")
+            return {"ok": True, "note": "new tab opened; subsequent actions target original page"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Close tab ─────────────────────────────────────────────────────────
+    elif act == "close_tab":
+        try:
+            page.close()
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Wait ──────────────────────────────────────────────────────────────
+    elif act == "wait":
+        try:
+            ms = int(val or 1000)
+            time.sleep(ms / 1000)
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Read local file ───────────────────────────────────────────────────
+    elif act == "read_file":
+        try:
+            p = Path(str(val)).expanduser()
+            if not p.exists():
+                return {"ok": False, "error": f"file not found: {p}"}
+            content = p.read_text(errors="replace")
+            return {"ok": True, "content": content[:8000]}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Write local file ──────────────────────────────────────────────────
+    elif act == "write_file":
+        try:
+            p = Path(str(action.get("path", val))).expanduser()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(str(action.get("content", "")))
+            return {"ok": True, "path": str(p)}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Run Python code snippet ───────────────────────────────────────────
+    elif act == "run_code":
+        code = str(action.get("code", val))
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".py", delete=False
+            ) as f:
+                f.write(textwrap.dedent(code))
+                tmp = f.name
+            result = subprocess.run(
+                [sys.executable, tmp],
+                capture_output=True, text=True, timeout=30
+            )
+            return {
+                "ok":     result.returncode == 0,
+                "stdout": result.stdout[:4000],
+                "stderr": result.stderr[:2000],
+            }
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "error": "code execution timed out (30s)"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        finally:
+            try:
+                Path(tmp).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    # ── Batch ─────────────────────────────────────────────────────────────
     elif act == "batch":
         if depth >= 2:
             return {"ok": False, "error": "batch depth limit reached"}
