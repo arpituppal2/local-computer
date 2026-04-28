@@ -1,14 +1,20 @@
-"""Mission orchestrator with multi-agent task graph, parallel dispatch, and chatbot routing.
+"""Mission orchestrator — capability-aware multi-agent task graph execution.
 
-Upgrade: goals are now decomposed by task_planner.build_task_graph() into a
-DAG of typed tasks, each executed by a specialist agent_roles agent.
-Falls back to the legacy navigation_agent stage loop for simple tasks.
+Execution flow:
+  1. assess_capabilities(goal)  — planner decides what modes are needed
+  2. build_task_graph(goal, cap) — planner decomposes into typed tasks
+  3. _execute_task_graph(...)   — runs tasks using the minimum required resources:
+       - response only  → Ollama, no browser
+       - online         → httpx/search API, no new tab
+       - browser        → Playwright Chromium (lazy launch)
+       - chatbot        → ai_chatbot_subagent via Playwright
 """
 from __future__ import annotations
 import json
 import sys
 import time
 import logging
+import threading
 from pathlib import Path
 from datetime import datetime
 
@@ -19,18 +25,17 @@ from scripts.ollama_client import call_json, MODEL_PLANNER, MODEL_HEAVY
 from scripts.navigation_agent import run_mission
 from scripts.router import route_goal, complexity_score
 from scripts.subagents import run_parallel_subagents, dispatch
-from scripts.task_planner import build_task_graph, tasks_to_stages
+from scripts.task_planner import (
+    build_task_graph, tasks_to_stages,
+    assess_capabilities, CapabilityPlan,
+    HEADLESS_ROLES, BROWSER_ROLES, ONLINE_ROLES,
+)
 from scripts.agent_roles import get_agent
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 _rt_path = ROOT / "configs" / "runtime.json"
 _rt = json.loads(_rt_path.read_text()) if _rt_path.exists() else {}
-
-# Roles that never need a real browser page — run headlessly against Ollama only
-_HEADLESS_ROLES = {"writer", "analyst", "planner", "critic", "summarizer"}
-# Roles that need an actual browser context open
-_BROWSER_ROLES  = {"browser", "researcher", "navigator", "actor"}
 
 
 def _wait_for_browser_ready(port: int, max_wait: float = 10.0, interval: float = 0.5):
@@ -55,7 +60,6 @@ def _safe_int(val, default: int) -> int:
 # ── Legacy plan_mission (kept for --parallel / chatbot-only flows) ────────────
 
 def plan_mission(goal: str) -> dict:
-    """Lightweight single-model plan for simple goals or chatbot-only dispatch."""
     parallel_keywords = ["while also", "simultaneously", "in parallel", "multiple", "&&"]
     use_heavy = any(k in goal.lower() for k in parallel_keywords)
     model = MODEL_HEAVY if use_heavy else MODEL_PLANNER
@@ -85,33 +89,29 @@ def plan_mission(goal: str) -> dict:
     return plan
 
 
-# ── New: multi-agent task-graph execution ─────────────────────────────────────
-
-def _needs_browser(tasks: list[dict]) -> bool:
-    """Return True only if at least one task requires a live browser page."""
-    return any(t.get("role", "") in _BROWSER_ROLES for t in tasks)
-
+# ── Capability-aware task graph execution ───────────────────────────────────
 
 def _execute_task_graph(goal: str) -> str:
-    """Decompose goal → task DAG → execute each task with its specialist agent.
+    """Two-phase planner → execute.
 
-    Browser (Chromium) is launched lazily — only when a task role actually
-    needs web navigation.  Pure writer/analyst/planner tasks run entirely
-    inside Ollama without ever touching Chrome.
+    Phase 1: assess_capabilities  — what modes does this goal need?
+    Phase 2: build_task_graph     — decompose into typed tasks
+    Phase 3: execute              — use only the resources Phase 1 said we need
     """
     from scripts.memory import Memory
     from scripts.navigation_agent import SEARCH_BASE
-    import threading
 
-    tasks  = build_task_graph(goal)
+    # ─ Phase 1: capability assessment ──────────────────────────────────
+    cap = assess_capabilities(goal)
+    logging.info(f"[orchestrator] capability plan: {cap.to_log()}")
+
+    # ─ Phase 2: task decomposition ────────────────────────────────────
+    tasks  = build_task_graph(goal, cap=cap)
     stages = {t["id"]: t for t in tasks}
 
-    completed: dict[str, dict] = {}   # task_id → result dict
+    completed: dict[str, dict] = {}
     memory = Memory()
     results_lock = threading.Lock()
-
-    # Decide upfront whether we even need a browser
-    browser_needed = _needs_browser(tasks)
 
     def _run_task(task: dict, page, context):
         agent  = get_agent(task["role"])
@@ -122,19 +122,6 @@ def _execute_task_graph(goal: str) -> str:
 
     def _ready(task: dict) -> bool:
         return all(d in completed for d in task["depends_on"])
-
-    def _execute_with_browser():
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
-            ctx     = browser.new_context()
-            page    = ctx.new_page()
-            page.goto(SEARCH_BASE + goal.replace(" ", "+"))
-            _run_rounds(page, ctx)
-            browser.close()
-
-    def _execute_headless():
-        _run_rounds(page=None, context=None)
 
     def _run_rounds(page, context):
         max_rounds = len(tasks) + 2
@@ -150,14 +137,25 @@ def _execute_task_graph(goal: str) -> str:
             for th in threads: th.start()
             for th in threads: th.join()
 
-    if browser_needed:
-        logging.info("[orchestrator] Browser tasks detected — launching Chromium")
-        _execute_with_browser()
+    # ─ Phase 3: execute with minimum required resources ──────────────────
+    if cap.needs_browser:
+        logging.info("[orchestrator] browser mode — launching Chromium")
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            ctx     = browser.new_context()
+            page    = ctx.new_page()
+            page.goto(SEARCH_BASE + goal.replace(" ", "+"))
+            _run_rounds(page, ctx)
+            browser.close()
+    elif cap.needs_online:
+        logging.info("[orchestrator] online mode — fetching silently (no new tab)")
+        _run_rounds(page=None, context=None)  # researcher agent uses httpx internally
     else:
-        logging.info("[orchestrator] No browser tasks — running headless (Ollama only)")
-        _execute_headless()
+        logging.info("[orchestrator] response mode — Ollama only, no browser")
+        _run_rounds(page=None, context=None)
 
-    # Collect writer output, else fall back to analyst, else concatenate findings
+    # Collect output: prefer writer → analyst → researcher → concatenate
     for role in ("writer", "analyst", "researcher"):
         for tid, res in completed.items():
             if stages[tid]["role"] == role and res.get("findings"):
@@ -180,7 +178,7 @@ def _execute_stages_parallel(plan: dict) -> list[dict]:
         }
         for s in stages
     ]
-    logging.info(f"[orchestrator] Dispatching {len(tasks)} stage(s) in parallel")
+    logging.info(f"[orchestrator] dispatching {len(tasks)} stage(s) in parallel")
     return run_parallel_subagents(tasks)
 
 
@@ -202,15 +200,13 @@ def main():
     if not goal:
         print("No goal provided."); sys.exit(1)
 
-    # Direct chatbot shortcut
     if args.chatbot:
         from scripts.ai_chatbot_subagent import chatbot_query
-        logging.info(f"[orchestrator] Direct chatbot dispatch → {args.chatbot}")
+        logging.info(f"[orchestrator] direct chatbot dispatch → {args.chatbot}")
         result = chatbot_query(goal, backend=args.chatbot)
         print(result["response"] or f"[ERROR] {result['error']}")
         return
 
-    # Legacy --simple or --parallel flags
     if args.simple or args.parallel:
         plan = plan_mission(goal)
         all_chatbot = all(s.get("chatbot_mode") for s in plan.get("stages", []))
@@ -227,7 +223,7 @@ def main():
         run_mission(plan, root=ROOT)
         return
 
-    # Default: multi-agent task graph
+    # Default: two-phase planner → task graph
     output = _execute_task_graph(goal)
     out_path = ROOT / "outputs" / "result.md"
     out_path.parent.mkdir(exist_ok=True)
