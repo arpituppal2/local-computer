@@ -1,811 +1,728 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>local-computer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LocalComputer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:15px;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
-:root{
-  --bg:#0d0d0d;--surface:#131313;--surface-2:#1a1a1a;--surface-3:#222;
-  --border:rgba(255,255,255,.08);--border-bright:rgba(255,255,255,.14);
-  --text:#e8e8e8;--text-muted:#888;--text-faint:#444;
-  --accent:#20b2aa;--accent-dim:rgba(32,178,170,.15);--accent-glow:rgba(32,178,170,.45);
-  --accent-glow-bright:rgba(32,178,170,.7);
-  --yellow:#f5c518;--red:#ff5f5f;--green:#4caf7d;--purple:#a78bfa;
-  --radius:12px;--radius-sm:7px;--radius-pill:999px;
-  --font:'Inter',system-ui,sans-serif;
-  --transition:180ms cubic-bezier(0.16,1,0.3,1);
-  --shadow:0 8px 32px rgba(0,0,0,.6);
-}
-body{background:var(--bg);color:var(--text);font-family:var(--font);
-  min-height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
-
-/* ── Layout ── */
-.app{display:flex;height:100dvh;overflow:hidden;}
-.sidebar{width:260px;flex-shrink:0;background:var(--surface);
-  border-right:1px solid var(--border);display:flex;flex-direction:column;
-  overflow-y:auto;padding-bottom:16px;}
-.sidebar-header{display:flex;align-items:center;gap:10px;
-  padding:20px 18px 16px;border-bottom:1px solid var(--border);}
-.logo{width:28px;height:28px;flex-shrink:0;border-radius:7px;
-  background:linear-gradient(135deg,var(--accent) 0%,#0e7490 100%);
-  display:grid;place-items:center;}
-.logo svg{color:#fff;}
-.logo-name{font-weight:600;font-size:.9rem;letter-spacing:-.01em;}
-.logo-name span{color:var(--accent);}
-.sidebar-section{padding:14px 10px 4px;}
-.sidebar-label{font-size:.68rem;font-weight:600;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--text-faint);padding:0 8px 6px;}
-.sidebar-btn{width:100%;text-align:left;padding:8px 10px;
-  border-radius:var(--radius-sm);border:none;background:transparent;
-  color:var(--text-muted);font-size:.82rem;cursor:pointer;
-  display:flex;align-items:center;gap:8px;
-  transition:background var(--transition),color var(--transition);}
-.sidebar-btn:hover{background:var(--surface-2);color:var(--text);}
-.sidebar-btn.active{background:var(--accent-dim);color:var(--accent);}
-.task-list{padding:0 10px;}
-.task-item{padding:7px 10px 7px 8px;border-radius:var(--radius-sm);
-  margin-bottom:2px;font-size:.78rem;display:flex;gap:8px;align-items:flex-start;
-  cursor:default;border:1px solid transparent;transition:background var(--transition);}
-.task-item:hover{background:var(--surface-2);}
-.task-item.running{border-color:var(--accent-dim);background:var(--accent-dim);}
-.task-item.done{opacity:.55;}.task-item.denied{opacity:.4;}
-.task-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
-.task-dot.pending{background:var(--text-faint);}
-.task-dot.running{background:var(--accent);animation:pulse 1.2s infinite;}
-.task-dot.done{background:var(--green);}
-.task-dot.error{background:var(--red);}
-.task-dot.denied{background:var(--yellow);}
-.task-role-badge{font-size:.62rem;font-weight:600;letter-spacing:.06em;
-  text-transform:uppercase;padding:1px 5px;border-radius:var(--radius-pill);
-  border:1px solid currentColor;flex-shrink:0;}
-.task-role-badge.researcher{color:#60a5fa;}.task-role-badge.analyst{color:#a78bfa;}
-.task-role-badge.coder{color:#f9a825;}.task-role-badge.writer{color:#4caf7d;}
-.task-role-badge.browser{color:var(--accent);}.task-role-badge.file{color:#fb923c;}
-
-/* ── Main ── */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
-.topbar{display:flex;align-items:center;justify-content:space-between;
-  padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.topbar-left{display:flex;align-items:center;gap:12px;}
-.status-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;
-  border-radius:var(--radius-pill);font-size:.75rem;font-weight:500;
-  background:var(--surface-2);border:1px solid var(--border);
-  transition:background var(--transition),border-color var(--transition);}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);
-  transition:background var(--transition);}
-.status-pill.thinking .status-dot{background:var(--yellow);animation:pulse 1s infinite;}
-.status-pill.acting   .status-dot{background:var(--accent);animation:pulse .8s infinite;}
-.status-pill.done     .status-dot{background:var(--green);}
-.status-pill.error    .status-dot{background:var(--red);}
-.status-pill.waiting_permission .status-dot{background:var(--yellow);animation:pulse .5s infinite;}
-.status-pill.waiting_login      .status-dot{background:var(--purple);animation:pulse .5s infinite;}
-.status-pill.waiting_login_takeover .status-dot{background:var(--purple);animation:pulse .3s infinite;}
-.topbar-right{display:flex;align-items:center;gap:8px;}
-.topbar-btn{padding:6px 12px;border-radius:var(--radius-pill);
-  border:1px solid var(--border);background:transparent;
-  color:var(--text-muted);font-size:.78rem;cursor:pointer;
-  display:flex;align-items:center;gap:5px;transition:all var(--transition);}
-.topbar-btn:hover{background:var(--surface-2);color:var(--text);border-color:var(--border-bright);}
-.content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
-
-/* ── Empty state ── */
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:20px;padding:40px;text-align:center;}
-.empty-icon{width:64px;height:64px;border-radius:18px;
-  background:linear-gradient(135deg,var(--accent) 0%,#0e7490 100%);
-  display:grid;place-items:center;box-shadow:0 0 40px var(--accent-glow);}
-.empty-title{font-size:1.4rem;font-weight:600;letter-spacing:-.02em;}
-.empty-sub{color:var(--text-muted);font-size:.88rem;max-width:340px;line-height:1.6;}
-.suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px;}
-.suggestion-chip{padding:7px 14px;border-radius:var(--radius-pill);
-  border:1px solid var(--border);background:var(--surface);
-  color:var(--text-muted);font-size:.78rem;cursor:pointer;
-  transition:all var(--transition);}
-.suggestion-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
-
-/* ── Timeline ── */
-.timeline-view{flex:1;overflow-y:auto;padding:16px 20px;
-  display:flex;flex-direction:column;gap:6px;}
-.timeline-entry{display:flex;gap:12px;align-items:flex-start;
-  font-size:.8rem;line-height:1.5;padding:8px 10px;
-  border-radius:var(--radius-sm);transition:background var(--transition);
-  animation:fadein .2s ease;}
-.timeline-entry:hover{background:var(--surface-2);}
-.entry-icon{width:22px;height:22px;border-radius:50%;flex-shrink:0;
-  display:grid;place-items:center;margin-top:1px;background:var(--surface-2);}
-.entry-icon.think{color:var(--yellow);}.entry-icon.start{color:var(--accent);}
-.entry-icon.plan{color:var(--purple);}.entry-icon.task_start{color:var(--accent);}
-.entry-icon.task_done{color:var(--green);}.entry-icon.error{color:var(--red);}
-.entry-icon.done{color:var(--green);}.entry-icon.permission_request{color:var(--yellow);}
-.entry-icon.permission_response{color:var(--green);}
-.entry-icon.login_required{color:var(--purple);}.entry-icon.login_creds_provided{color:var(--green);}
-.entry-icon.login_takeover{color:var(--purple);}.entry-icon.login_takeover_done{color:var(--green);}
-.entry-icon.user_inject{color:var(--accent);}.entry-icon.injected{color:var(--accent);}
-.entry-icon.cancelled{color:var(--red);}.entry-icon.heartbeat{display:none;}
-.entry-time{color:var(--text-faint);font-size:.68rem;flex-shrink:0;margin-top:3px;}
-.entry-text{flex:1;color:var(--text);word-break:break-word;}
-.entry-badge{font-size:.65rem;font-weight:600;letter-spacing:.06em;
-  text-transform:uppercase;padding:1px 6px;border-radius:var(--radius-pill);
-  border:1px solid currentColor;flex-shrink:0;}
-
-/* ── Result panel ── */
-.result-panel{border-top:1px solid var(--border);background:var(--surface);
-  padding:20px;max-height:45%;overflow-y:auto;flex-shrink:0;}
-.result-header{font-size:.75rem;font-weight:600;letter-spacing:.05em;
-  text-transform:uppercase;color:var(--text-faint);margin-bottom:12px;
-  display:flex;align-items:center;gap:8px;}
-.result-header::after{content:'';flex:1;height:1px;background:var(--border);}
-.result-body{font-size:.85rem;line-height:1.75;color:var(--text);
-  white-space:pre-wrap;font-family:var(--font);}
-
-/* ── Input area ── */
-.input-area{flex-shrink:0;padding:12px 20px 16px;border-top:1px solid var(--border);
-  background:var(--surface);position:relative;}
-
-/* Perplexity-style blue glow bar at top of input area */
-.progress-glow{
-  position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,
-    transparent 0%,
-    var(--accent) 15%,
-    #7dd3fc 35%,
-    rgba(125,211,252,.95) 50%,
-    #7dd3fc 65%,
-    var(--accent) 85%,
-    transparent 100%);
-  background-size:200% 100%;opacity:0;
-  transition:opacity .4s ease;
-  pointer-events:none;z-index:5;
-  filter:blur(0.5px);
-}
-.progress-glow.active{
-  opacity:1;
-  animation:glowSlide 2s linear infinite;
-  box-shadow:0 0 12px 1px var(--accent-glow-bright),
-             0 0 28px 4px rgba(125,211,252,.25);
-}
-@keyframes glowSlide{
-  0%  {background-position:200% 0;}
-  100%{background-position:-200% 0;}
+/* ─── TOKENS ─────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #0a0a0f;
+  --surface:     #111118;
+  --surface-2:   #16161f;
+  --surface-3:   #1c1c28;
+  --border:      rgba(255,255,255,.07);
+  --border-s:    rgba(255,255,255,.12);
+  --text:        #e2e4f0;
+  --text-muted:  #6b7099;
+  --text-faint:  #353850;
+  --accent:      #7c6af7;
+  --accent-dim:  rgba(124,106,247,.15);
+  --accent-glow: rgba(124,106,247,.25);
+  --green:       #34d399;
+  --green-dim:   rgba(52,211,153,.12);
+  --amber:       #fbbf24;
+  --amber-dim:   rgba(251,191,36,.12);
+  --red:         #f87171;
+  --red-dim:     rgba(248,113,113,.12);
+  --blue:        #60a5fa;
+  --blue-dim:    rgba(96,165,250,.12);
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  14px;
+  --r-xl:  20px;
+  --mono:  'JetBrains Mono', ui-monospace, monospace;
+  --sans:  'Inter', system-ui, sans-serif;
+  --transition: 160ms cubic-bezier(0.16,1,0.3,1);
 }
 
-/* Interaction lock overlay — covers entire main area while running */
-.run-lock{
-  position:absolute;inset:0;
-  background:transparent;
-  z-index:20;
-  display:none;
-  cursor:not-allowed;
+/* ─── RESET ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
-.run-lock.active{display:block;}
+button { cursor: pointer; font: inherit; border: none; background: none; color: inherit; }
+input, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-/* Stop bar — pinned bottom-center over lock */
-.stop-bar-wrap{
-  position:absolute;
-  bottom:88px; /* sits just above the input-area */
-  left:50%;transform:translateX(-50%);
-  z-index:25;
-  pointer-events:all;
-  display:none;
-  animation:riseIn .3s cubic-bezier(0.16,1,0.3,1);
+/* ─── LAYOUT ─────────────────────────────────────────────────────────── */
+.shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: 48px 1fr;
+  grid-template-areas: "header header" "sidebar main";
+  height: 100dvh;
+  overflow: hidden;
 }
-.stop-bar-wrap.active{display:flex;}
-@keyframes riseIn{
-  from{opacity:0;transform:translateX(-50%) translateY(14px);}
-  to  {opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ─── TOPBAR ─────────────────────────────────────────────────────────── */
+.topbar {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
 }
-.stop-bar{
-  display:flex;align-items:center;gap:10px;
-  background:rgba(13,13,13,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(32,178,170,.28);border-radius:var(--radius-pill);
-  padding:9px 18px 9px 14px;
-  box-shadow:0 4px 32px rgba(0,0,0,.55),
-             0 0 0 1px rgba(32,178,170,.1),
-             0 0 20px 2px rgba(32,178,170,.12);
+.logo {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; letter-spacing: -.01em;
+  color: var(--text); user-select: none;
 }
-.stop-bar-pulse{
-  width:8px;height:8px;border-radius:50%;
-  background:var(--accent);
-  box-shadow:0 0 8px 2px var(--accent-glow);
-  animation:pulse .9s infinite;
+.logo svg { flex-shrink: 0; }
+.topbar-spacer { flex: 1; }
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--r-xl);
+  font-size: 11px; font-weight: 500; letter-spacing: .04em;
+  text-transform: uppercase;
+  background: var(--surface-3);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  transition: all var(--transition);
 }
-.stop-bar-label{font-size:.78rem;color:var(--text-muted);}
-.stop-btn{
-  padding:5px 16px;border-radius:var(--radius-pill);
-  background:rgba(255,95,95,.1);border:1px solid rgba(255,95,95,.3);
-  color:var(--red);font-size:.78rem;font-weight:600;cursor:pointer;
-  transition:all var(--transition);
+.status-pill .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition: background var(--transition);
 }
-.stop-btn:hover{background:rgba(255,95,95,.22);border-color:var(--red);}
+.status-pill.running  { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-glow); }
+.status-pill.running  .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 1.4s ease infinite; }
+.status-pill.done     { background: var(--green-dim);  color: var(--green);  border-color: rgba(52,211,153,.25); }
+.status-pill.done     .dot { background: var(--green); }
+.status-pill.error    { background: var(--red-dim);    color: var(--red);    border-color: rgba(248,113,113,.25); }
+.status-pill.error    .dot { background: var(--red); }
+.status-pill.thinking { background: var(--amber-dim);  color: var(--amber);  border-color: rgba(251,191,36,.25); }
+.status-pill.thinking .dot { background: var(--amber); animation: pulse 1.4s ease infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
 
-/* Input wrap */
-.input-wrap{display:flex;gap:8px;align-items:flex-end;
-  background:var(--surface-2);border:1px solid var(--border);
-  border-radius:var(--radius);padding:10px 10px 10px 16px;
-  transition:border-color var(--transition),box-shadow var(--transition);}
-.input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
-#goal-input{flex:1;background:transparent;border:none;outline:none;
-  color:var(--text);font-family:var(--font);font-size:.9rem;
-  line-height:1.5;resize:none;max-height:120px;field-sizing:content;}
-#goal-input::placeholder{color:var(--text-faint);}
-.send-btn{width:34px;height:34px;border-radius:8px;flex-shrink:0;
-  background:var(--accent);border:none;cursor:pointer;
-  display:grid;place-items:center;
-  transition:background var(--transition),transform var(--transition);
-  align-self:flex-end;}
-.send-btn:hover{background:#17a39c;}.send-btn:active{transform:scale(.95);}
-.send-btn svg{color:#fff;}
-.send-btn:disabled{background:var(--surface-3);cursor:not-allowed;}
-.send-btn:disabled svg{color:var(--text-faint);}
-.input-hint{font-size:.7rem;color:var(--text-faint);margin-top:6px;padding:0 4px;}
+.btn-cancel {
+  padding: 5px 12px; border-radius: var(--r-sm);
+  font-size: 12px; font-weight: 500;
+  background: var(--red-dim); color: var(--red);
+  border: 1px solid rgba(248,113,113,.2);
+  transition: all var(--transition);
+  display: none;
+}
+.btn-cancel:hover { background: rgba(248,113,113,.22); }
+.btn-cancel.visible { display: block; }
 
-/* Mid-run inject row */
-.inject-row{display:none;margin-top:8px;animation:fadein .2s ease;}
-.inject-row.visible{display:flex;gap:8px;align-items:center;}
-.inject-input{flex:1;background:var(--surface-3);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:7px 12px;outline:none;
-  color:var(--text);font-family:var(--font);font-size:.82rem;
-  transition:border-color var(--transition);}
-.inject-input:focus{border-color:var(--accent);}
-.inject-input::placeholder{color:var(--text-faint);}
-.inject-btn{padding:7px 14px;border-radius:var(--radius-sm);
-  background:var(--accent-dim);border:1px solid var(--accent);
-  color:var(--accent);font-size:.78rem;font-weight:600;cursor:pointer;
-  white-space:nowrap;transition:all var(--transition);}
-.inject-btn:hover{background:var(--accent);color:#fff;}
+/* ─── SIDEBAR ────────────────────────────────────────────────────────── */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-section {
+  padding: 12px 14px 6px;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.task-list { flex: 1; overflow-y: auto; padding: 0 8px 12px; }
+.task-list::-webkit-scrollbar { width: 4px; }
+.task-list::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+.task-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 8px;
+  border-radius: var(--r-sm);
+  margin-bottom: 2px;
+  transition: background var(--transition);
+  cursor: default;
+}
+.task-item:hover { background: var(--surface-2); }
+.task-item .ti-icon {
+  width: 18px; height: 18px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+}
+.task-item .ti-body { flex: 1; min-width: 0; }
+.task-item .ti-role {
+  font-size: 10px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 1px;
+}
+.task-item .ti-goal {
+  font-size: 12px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.task-item.pending .ti-icon  { background: var(--surface-3); color: var(--text-faint); }
+.task-item.running .ti-icon  { background: var(--accent-dim); color: var(--accent); }
+.task-item.done    .ti-icon  { background: var(--green-dim);  color: var(--green); }
+.task-item.error   .ti-icon  { background: var(--red-dim);    color: var(--red); }
+.task-item.denied  .ti-icon  { background: var(--amber-dim);  color: var(--amber); }
+.empty-tasks {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12px;
+  line-height: 1.7;
+}
 
-/* ── Takeover banner ── */
-.takeover-banner{display:none;align-items:center;justify-content:space-between;
-  gap:12px;padding:10px 16px;background:rgba(167,139,250,.1);
-  border:1px solid rgba(167,139,250,.25);border-radius:var(--radius-sm);
-  margin-bottom:8px;animation:fadein .25s ease;}
-.takeover-banner.visible{display:flex;}
-.takeover-text{font-size:.78rem;color:var(--purple);line-height:1.4;}
-.takeover-done-btn{padding:5px 14px;border-radius:var(--radius-pill);
-  background:rgba(167,139,250,.15);border:1px solid var(--purple);
-  color:var(--purple);font-size:.78rem;font-weight:600;cursor:pointer;
-  white-space:nowrap;transition:all var(--transition);}
-.takeover-done-btn:hover{background:var(--purple);color:#fff;}
+/* ─── MAIN ───────────────────────────────────────────────────────────── */
+.main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
 
-/* ── Modal ── */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);
-  display:grid;place-items:center;z-index:100;
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  opacity:0;pointer-events:none;transition:opacity .22s;}
-.modal-backdrop.visible{opacity:1;pointer-events:all;}
-.modal{background:var(--surface-2);border:1px solid var(--border-bright);
-  border-radius:var(--radius);padding:28px;max-width:440px;
-  width:calc(100% - 40px);box-shadow:var(--shadow);
-  transform:translateY(14px);
-  transition:transform .24s cubic-bezier(0.16,1,0.3,1);}
-.modal-backdrop.visible .modal{transform:translateY(0);}
-.modal-icon{width:44px;height:44px;border-radius:12px;
-  display:grid;place-items:center;margin-bottom:14px;}
-.modal-icon.yellow{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);color:var(--yellow);}
-.modal-icon.purple{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:var(--purple);}
-.modal-title{font-size:1rem;font-weight:600;margin-bottom:6px;}
-.modal-desc{font-size:.82rem;color:var(--text-muted);line-height:1.6;margin-bottom:18px;}
-.modal-actions{display:flex;gap:8px;}
-.modal-btn{flex:1;padding:9px;border-radius:var(--radius-sm);
-  border:1px solid var(--border);background:var(--surface-3);
-  color:var(--text-muted);font-size:.82rem;cursor:pointer;
-  transition:all var(--transition);}
-.modal-btn:hover{background:var(--surface);color:var(--text);}
-.modal-btn.allow{background:var(--accent-dim);border-color:var(--accent);
-  color:var(--accent);font-weight:600;}
-.modal-btn.allow:hover{background:var(--accent);color:#fff;}
-.modal-btn.purple-btn{background:rgba(167,139,250,.12);border-color:var(--purple);
-  color:var(--purple);font-weight:600;}
-.modal-btn.purple-btn:hover{background:var(--purple);color:#fff;}
-.cred-form{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
-.cred-label{font-size:.75rem;color:var(--text-muted);margin-bottom:3px;display:block;}
-.cred-input{width:100%;background:var(--surface-3);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:8px 12px;outline:none;
-  color:var(--text);font-family:var(--font);font-size:.85rem;
-  transition:border-color var(--transition);}
-.cred-input:focus{border-color:var(--accent);}
-.modal-divider{text-align:center;font-size:.72rem;color:var(--text-faint);
-  margin:4px 0;position:relative;}
-.modal-divider::before,.modal-divider::after{content:'';position:absolute;
-  top:50%;width:42%;height:1px;background:var(--border);}
-.modal-divider::before{left:0;}.modal-divider::after{right:0;}
+/* ─── GOAL BAR ───────────────────────────────────────────────────────── */
+.goal-bar {
+  padding: 16px 24px 0;
+  display: flex; gap: 10px;
+}
+.goal-input-wrap {
+  flex: 1;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-s);
+  border-radius: var(--r-lg);
+  padding: 0 14px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.goal-input-wrap:focus-within {
+  border-color: rgba(124,106,247,.5);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.goal-input-wrap svg { flex-shrink: 0; color: var(--text-faint); }
+#goalInput {
+  flex: 1; background: none; border: none; outline: none;
+  padding: 11px 0;
+  font-size: 14px; color: var(--text);
+}
+#goalInput::placeholder { color: var(--text-faint); }
+.btn-run {
+  padding: 0 18px; height: 44px;
+  border-radius: var(--r-lg);
+  font-size: 13px; font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn-run:hover { background: #6b5de6; box-shadow: 0 4px 16px var(--accent-glow); }
+.btn-run:active { transform: scale(.97); }
+.btn-run:disabled { opacity: .45; cursor: not-allowed; }
 
-/* ── Animations ── */
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
-@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-::-webkit-scrollbar{width:4px;height:4px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:2px;}
+/* ─── TABS ───────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 2px;
+  padding: 12px 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  padding: 7px 14px;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all var(--transition);
+  position: relative;
+}
+.tab-btn:hover { color: var(--text); background: var(--surface); }
+.tab-btn.active {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+  margin-bottom: -1px;
+}
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  font-size: 10px; font-weight: 600;
+  background: var(--accent-dim); color: var(--accent);
+  margin-left: 5px; padding: 0 4px;
+}
+
+/* ─── PANELS ─────────────────────────────────────────────────────────── */
+.panels { flex: 1; overflow: hidden; position: relative; }
+.panel { display: none; height: 100%; overflow-y: auto; }
+.panel.active { display: block; }
+.panel::-webkit-scrollbar { width: 6px; }
+.panel::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 6px; }
+
+/* ─── TIMELINE PANEL ─────────────────────────────────────────────────── */
+#panelTimeline { padding: 16px 24px; }
+.tl-empty {
+  padding: 48px 0; text-align: center;
+  color: var(--text-faint); font-size: 13px; line-height: 1.8;
+}
+.tl-empty span { font-size: 28px; display: block; margin-bottom: 8px; opacity: .5; }
+.tl-item {
+  display: flex; gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  animation: fadeSlide .18s ease;
+}
+@keyframes fadeSlide { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+.tl-item:last-child { border-bottom: none; }
+.tl-time {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-faint); white-space: nowrap; padding-top: 1px; width: 56px; flex-shrink: 0;
+}
+.tl-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  margin-top: 6px; flex-shrink: 0;
+}
+.tl-body { flex: 1; min-width: 0; }
+.tl-kind {
+  font-size: 10px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; margin-bottom: 1px;
+}
+.tl-text { font-size: 13px; color: var(--text); word-break: break-word; }
+.tl-url { font-size: 11px; font-family: var(--mono); color: var(--text-muted); margin-top: 2px; }
+
+/* kind colors */
+.kind-start    { color: var(--accent); } .dot-start    { background: var(--accent); }
+.kind-think    { color: var(--amber);  } .dot-think    { background: var(--amber); }
+.kind-plan     { color: var(--blue);   } .dot-plan     { background: var(--blue); }
+.kind-task_start { color: var(--accent); } .dot-task_start { background: var(--accent); }
+.kind-task_done  { color: var(--green);  } .dot-task_done  { background: var(--green); }
+.kind-evidence   { color: var(--green);  } .dot-evidence   { background: var(--green); }
+.kind-api_evidence { color: var(--green); } .dot-api_evidence { background: var(--green); }
+.kind-action_failed { color: var(--red); } .dot-action_failed { background: var(--red); }
+.kind-error      { color: var(--red);    } .dot-error      { background: var(--red); }
+.kind-done       { color: var(--green);  } .dot-done       { background: var(--green); }
+.kind-cancelled  { color: var(--amber);  } .dot-cancelled  { background: var(--amber); }
+.kind-permission_request { color: var(--amber); } .dot-permission_request { background: var(--amber); }
+.kind-login_required { color: var(--red); } .dot-login_required { background: var(--red); }
+.kind-injected { color: var(--blue); } .dot-injected { background: var(--blue); }
+
+/* ─── RESULT PANEL ───────────────────────────────────────────────────── */
+#panelResult { padding: 24px; }
+.result-empty {
+  padding: 48px 0; text-align: center;
+  color: var(--text-faint); font-size: 13px;
+}
+.result-md {
+  max-width: 760px;
+  font-size: 14px; line-height: 1.75;
+  color: var(--text);
+}
+.result-md h1 { font-size: 20px; font-weight: 700; margin: 0 0 16px; color: var(--text); }
+.result-md h2 { font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: var(--text); }
+.result-md h3 { font-size: 14px; font-weight: 600; margin: 16px 0 6px; color: var(--text); }
+.result-md p  { margin-bottom: 12px; }
+.result-md ul, .result-md ol { margin: 8px 0 12px 20px; }
+.result-md li { margin-bottom: 4px; }
+.result-md code {
+  font-family: var(--mono); font-size: 12px;
+  background: var(--surface-2); padding: 1px 5px; border-radius: 4px;
+}
+.result-md pre {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 14px 16px;
+  overflow-x: auto; margin: 12px 0;
+}
+.result-md pre code { background: none; padding: 0; font-size: 12px; }
+.result-md blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 14px; color: var(--text-muted); margin: 12px 0;
+}
+.result-md a { color: var(--accent); }
+.result-md hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ─── INJECT PANEL ───────────────────────────────────────────────────── */
+#panelInject {
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+#panelInject p { font-size: 13px; color: var(--text-muted); max-width: 520px; }
+.inject-row { display: flex; gap: 10px; }
+#injectInput {
+  flex: 1;
+  background: var(--surface); border: 1px solid var(--border-s);
+  border-radius: var(--r-md); padding: 10px 14px;
+  font-size: 13px; outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+#injectInput:focus {
+  border-color: rgba(124,106,247,.5);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.btn-inject {
+  padding: 10px 18px; border-radius: var(--r-md);
+  font-size: 13px; font-weight: 600;
+  background: var(--surface-3); color: var(--text);
+  border: 1px solid var(--border-s);
+  transition: all var(--transition);
+}
+.btn-inject:hover { background: var(--surface-2); border-color: var(--border-s); }
+
+/* ─── PERMISSION OVERLAY ─────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+  z-index: 100; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.overlay.visible { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface-2); border: 1px solid var(--border-s);
+  border-radius: var(--r-xl); padding: 28px 28px 24px;
+  max-width: 440px; width: 90%;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5);
+}
+.modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+.modal p  { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.btn-deny  { padding: 8px 18px; border-radius: var(--r-md); font-size: 13px; font-weight: 500; background: var(--surface-3); color: var(--text); border: 1px solid var(--border); transition: all var(--transition); }
+.btn-allow { padding: 8px 18px; border-radius: var(--r-md); font-size: 13px; font-weight: 600; background: var(--accent); color: #fff; border: 1px solid transparent; transition: all var(--transition); }
+.btn-deny:hover  { background: var(--surface); }
+.btn-allow:hover { background: #6b5de6; }
+
+/* ─── LOGIN OVERLAY ──────────────────────────────────────────────────── */
+#loginOverlay .modal { max-width: 380px; }
+#loginOverlay label { display: block; font-size: 11px; font-weight: 600; letter-spacing:.04em; text-transform:uppercase; color: var(--text-muted); margin-bottom: 5px; }
+#loginOverlay input {
+  width: 100%; background: var(--surface); border: 1px solid var(--border-s);
+  border-radius: var(--r-md); padding: 9px 12px;
+  font-size: 13px; outline: none; margin-bottom: 12px;
+  transition: border-color var(--transition);
+}
+#loginOverlay input:focus { border-color: rgba(124,106,247,.5); }
+.login-or { text-align: center; color: var(--text-faint); font-size: 12px; margin: 4px 0 10px; }
+.btn-takeover { width: 100%; padding: 9px; border-radius: var(--r-md); font-size: 13px; font-weight: 500; background: var(--surface-3); color: var(--text); border: 1px solid var(--border); transition: all var(--transition); margin-bottom: 6px; }
+.btn-takeover:hover { background: var(--surface); }
+.btn-skip { width: 100%; padding: 7px; border-radius: var(--r-md); font-size: 12px; font-weight: 500; background: none; color: var(--text-faint); border: 1px solid transparent; transition: all var(--transition); }
+.btn-skip:hover { color: var(--text-muted); }
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- ── Sidebar ── -->
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-label="LocalComputer">
+        <rect x="1" y="3" width="18" height="12" rx="2" stroke="#7c6af7" stroke-width="1.5"/>
+        <path d="M7 16.5h6M10 15.5v1" stroke="#7c6af7" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M5 8l2.5 2L5 12" stroke="#60a5fa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9.5 12h4" stroke="#34d399" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      LocalComputer
+    </div>
+    <div class="topbar-spacer"></div>
+    <div id="statusPill" class="status-pill">
+      <span class="dot"></span>
+      <span id="statusText">Idle</span>
+    </div>
+    <button id="btnCancel" class="btn-cancel" onclick="cancelMission()">Stop</button>
+  </header>
+
+  <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83
-                   M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-        </svg>
-      </div>
-      <span class="logo-name">local<span>-computer</span></span>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Navigation</div>
-      <button class="sidebar-btn active" id="btn-mission">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>Mission
-      </button>
-      <button class="sidebar-btn" id="btn-result">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-        </svg>Last Result
-      </button>
-    </div>
-    <div class="sidebar-section" style="flex:1">
-      <div class="sidebar-label">Tasks</div>
-      <div class="task-list" id="task-list">
-        <div style="font-size:.75rem;color:var(--text-faint);padding:6px 10px;">No tasks yet</div>
-      </div>
+    <div class="sidebar-section">Task Graph</div>
+    <div class="task-list" id="taskList">
+      <div class="empty-tasks"><span>⬡</span>No tasks yet.<br/>Enter a goal to begin.</div>
     </div>
   </aside>
 
-  <!-- ── Main ── -->
-  <div class="main">
-    <div class="topbar">
-      <div class="topbar-left">
-        <div class="status-pill idle" id="status-pill">
-          <div class="status-dot"></div>
-          <span id="status-text">Idle</span>
-        </div>
-        <span id="current-goal" style="font-size:.8rem;color:var(--text-muted);
-          max-width:400px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+  <!-- MAIN -->
+  <main class="main">
+    <!-- Goal bar -->
+    <div class="goal-bar">
+      <div class="goal-input-wrap">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input id="goalInput" type="text" placeholder="What should the agent do?" autocomplete="off" />
       </div>
-      <div class="topbar-right" id="topbar-right"></div>
+      <button id="btnRun" class="btn-run" onclick="submitGoal()">Run</button>
     </div>
 
-    <!-- Takeover banner -->
-    <div class="takeover-banner" id="takeover-banner">
-      <span class="takeover-text">
-        &#128432; <strong>You have control.</strong> Complete the login in the browser, then click Done.
-      </span>
-      <button class="takeover-done-btn" id="takeover-done-btn">Done</button>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="timeline" onclick="switchTab('timeline',this)">Timeline</button>
+      <button class="tab-btn" data-tab="result" onclick="switchTab('result',this)">Result</button>
+      <button class="tab-btn" data-tab="inject" onclick="switchTab('inject',this)">Inject</button>
     </div>
 
-    <!-- Content area -->
-    <div class="content" id="content">
-      <!-- Run lock — blocks all clicks on the content area while agent is running -->
-      <div class="run-lock" id="run-lock" title="Agent is working…"></div>
-
-      <div class="empty-state" id="empty-state">
-        <div class="empty-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="1.8">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-        </div>
-        <div class="empty-title">What should I do?</div>
-        <div class="empty-sub">Describe a task. I'll plan it, ask for permissions, and get it done.</div>
-        <div class="suggestions">
-          <button class="suggestion-chip" data-goal="Search the web for the latest news on local LLMs and write a summary">Latest LLM news</button>
-          <button class="suggestion-chip" data-goal="Find the top 5 papers on AI agents published this month and summarize them">AI agent papers</button>
-          <button class="suggestion-chip" data-goal="Go to GitHub trending and list the top 10 repositories today">GitHub trending</button>
-          <button class="suggestion-chip" data-goal="Search for competitive math problem resources and compile a reading list">Math resources</button>
-          <button class="suggestion-chip" data-goal="Write a Python script that computes the first 1000 prime numbers and save it to primes.py">Code: primes.py</button>
-        </div>
+    <!-- Panels -->
+    <div class="panels">
+      <div id="panelTimeline" class="panel active">
+        <div id="tlEmpty" class="tl-empty"><span>◈</span>Timeline will appear here once the agent starts.</div>
       </div>
-
-      <div class="timeline-view" id="timeline" style="display:none"></div>
-      <div class="result-panel" id="result-panel" style="display:none">
-        <div class="result-header">Result</div>
-        <div class="result-body" id="result-body"></div>
+      <div id="panelResult" class="panel">
+        <div id="resultEmpty" class="result-empty">No result yet.</div>
+        <div id="resultMd" class="result-md" style="display:none"></div>
+      </div>
+      <div id="panelInject" class="panel">
+        <p>Send an additional instruction to the running agent mid-task.</p>
+        <div class="inject-row">
+          <input id="injectInput" type="text" placeholder="e.g. also check arxiv.org" />
+          <button class="btn-inject" onclick="sendInject()">Inject</button>
+        </div>
       </div>
     </div>
-
-    <!-- ── Input area ── -->
-    <div class="input-area">
-      <!-- Blue glowy progress bar — Perplexity-style -->
-      <div class="progress-glow" id="progress-glow"></div>
-
-      <!-- Stop bar — floats above input area while running -->
-      <div class="stop-bar-wrap" id="stop-bar-wrap">
-        <div class="stop-bar">
-          <div class="stop-bar-pulse"></div>
-          <span class="stop-bar-label">Agent is working&#8230;</span>
-          <button class="stop-btn" id="stop-btn">&#9632;&nbsp;Stop</button>
-        </div>
-      </div>
-
-      <div class="input-wrap">
-        <textarea id="goal-input" placeholder="Ask me to do anything&#8230;" rows="1"></textarea>
-        <button class="send-btn" id="send-btn" aria-label="Send">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2.5">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Mid-run instruction inject -->
-      <div class="inject-row" id="inject-row">
-        <input class="inject-input" id="inject-input"
-               placeholder="Add an instruction while running&#8230; (e.g. 'also check pricing')"/>
-        <button class="inject-btn" id="inject-btn">Send</button>
-      </div>
-
-      <div class="input-hint" id="input-hint">Press Enter to send &middot; Shift+Enter for new line</div>
-    </div>
-  </div>
+  </main>
 </div>
 
-<!-- ── Permission modal ── -->
-<div class="modal-backdrop" id="permission-modal">
+<!-- Permission overlay -->
+<div id="permOverlay" class="overlay">
   <div class="modal">
-    <div class="modal-icon yellow">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    </div>
-    <div class="modal-title" id="modal-title">Permission Required</div>
-    <div class="modal-desc"  id="modal-desc"></div>
+    <h3>Permission required</h3>
+    <p id="permDesc">The agent wants to perform an action.</p>
     <div class="modal-actions">
-      <button class="modal-btn"       id="modal-deny">Deny</button>
-      <button class="modal-btn allow" id="modal-allow">Allow</button>
+      <button class="btn-deny"  onclick="respond(false)">Deny</button>
+      <button class="btn-allow" onclick="respond(true)">Allow</button>
     </div>
   </div>
 </div>
 
-<!-- ── Login modal ── -->
-<div class="modal-backdrop" id="login-modal">
+<!-- Login overlay -->
+<div id="loginOverlay" class="overlay">
   <div class="modal">
-    <div class="modal-icon purple">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
-    </div>
-    <div class="modal-title" id="login-modal-title">Login Required</div>
-    <div class="modal-desc"  id="login-modal-desc">
-      The agent needs to log in to continue. Enter your credentials to proceed automatically, or take manual control of the browser.
-    </div>
-
-    <!-- Credential form -->
-    <div class="cred-form" id="cred-form">
-      <div>
-        <label class="cred-label" for="cred-email">Email / Username</label>
-        <input class="cred-input" id="cred-email" type="text"
-               placeholder="you@example.com" autocomplete="username"/>
-      </div>
-      <div>
-        <label class="cred-label" for="cred-password">Password</label>
-        <input class="cred-input" id="cred-password" type="password"
-               placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
-               autocomplete="current-password"/>
-      </div>
-    </div>
-
-    <div class="modal-actions" style="flex-direction:column;gap:8px;">
-      <button class="modal-btn allow" id="login-creds-btn">
-        &#9654;&nbsp;Fill credentials automatically
-      </button>
-      <div class="modal-divider">or</div>
-      <button class="modal-btn purple-btn" id="login-takeover-btn">
-        &#128432;&nbsp;Let me log in manually (take control)
-      </button>
-      <button class="modal-btn" id="login-deny-btn">
-        Skip this login
-      </button>
-    </div>
+    <h3>Login required</h3>
+    <p id="loginSite" style="color:var(--text-muted);font-size:12px;margin-bottom:14px;"></p>
+    <label>Email / Username</label>
+    <input id="loginEmail" type="text" placeholder="you@example.com" />
+    <label>Password</label>
+    <input id="loginPw" type="password" placeholder="••••••••" />
+    <button class="btn-allow" style="width:100%;margin-bottom:10px;padding:9px" onclick="submitCreds()">Sign in for agent</button>
+    <div class="login-or">or</div>
+    <button class="btn-takeover" onclick="takeOver()">Take over browser manually</button>
+    <button class="btn-skip" onclick="skipLogin()">Skip this login</button>
   </div>
 </div>
 
 <script>
-(()=>{
-'use strict';
-const API='';
-const $=id=>document.getElementById(id);
-let view='mission';
-let isRunning=false;
-let isTakeover=false;
-
-/* ── View switcher ── */
-function setView(v){
-  view=v;
-  $('btn-mission').classList.toggle('active',v==='mission');
-  $('btn-result').classList.toggle('active',v==='result');
-  $('timeline').style.display   =v==='mission'?'flex':'none';
-  $('result-panel').style.display=v==='result' ?'block':'none';
-  const has=$('timeline').children.length>0;
-  $('empty-state').style.display=(v==='mission'&&!has)?'flex':'none';
+// ─── MD RENDERER (no deps) ─────────────────────────────────────────────
+function renderMd(md) {
+  return md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,  '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,   '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^\* (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\n{2,}/g,'</p><p>')
+    .replace(/^(?!<[hublap])(.+)$/gm,'<p>$1</p>')
+    .replace(/<p><\/p>/g,'');
 }
-$('btn-mission').addEventListener('click',()=>setView('mission'));
-$('btn-result') .addEventListener('click',()=>setView('result'));
 
-/* ── Timeline icons ── */
-const ICONS={
-  start:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
-  think:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-  plan:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
-  task_start:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-  task_done:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
-  done:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
-  error:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
-  permission_request:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-  permission_response:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
-  login_required:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-  login_creds_provided:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
-  login_takeover:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M2 12h4M18 12h4"/></svg>`,
-  user_inject:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
-  injected:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-  cancelled:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+// ─── STATE ────────────────────────────────────────────────────────────
+const tlPanel  = document.getElementById('panelTimeline');
+const tlEmpty  = document.getElementById('tlEmpty');
+const taskList = document.getElementById('taskList');
+const resultMd = document.getElementById('resultMd');
+const resultEmpty = document.getElementById('resultEmpty');
+const pill     = document.getElementById('statusPill');
+const pillText = document.getElementById('statusText');
+const btnRun   = document.getElementById('btnRun');
+const btnCancel = document.getElementById('btnCancel');
+let   tabBadge = {timeline:0};
+
+function setStatus(s) {
+  const labels = {idle:'Idle',thinking:'Thinking',acting:'Acting',done:'Done',error:'Error',
+    waiting_permission:'Waiting',waiting_login:'Login',cancelled:'Cancelled'};
+  pill.className = 'status-pill ' + (s==='acting'?'running':s==='thinking'?'thinking':s==='done'?'done':s==='error'?'error':'');
+  pillText.textContent = labels[s] || s;
+  const busy = s==='thinking'||s==='acting';
+  btnRun.disabled = busy;
+  btnCancel.classList.toggle('visible', busy);
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel' + id[0].toUpperCase() + id.slice(1)).classList.add('active');
+  el.classList.add('active');
+}
+
+// ─── TIMELINE ─────────────────────────────────────────────────────────
+const KIND_COLOR = {
+  start:'accent', think:'amber', plan:'blue', task_start:'accent', task_done:'green',
+  evidence:'green', api_evidence:'green', action_failed:'red', error:'red', done:'green',
+  cancelled:'amber', permission_request:'amber', login_required:'red', injected:'blue',
 };
-const defaultIcon=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/></svg>`;
+const KIND_LABEL = {
+  start:'Start', think:'Thinking', plan:'Plan', task_start:'Task', task_done:'Done',
+  evidence:'Evidence', api_evidence:'API Hit', action_failed:'Failed', error:'Error',
+  done:'Complete', cancelled:'Cancelled', permission_request:'Permission', login_required:'Login',
+  injected:'Inject', heartbeat:'',
+};
 
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-function appendEntry(evt){
-  if(evt.kind==='heartbeat'||evt.kind==='snapshot') return;
-  const tl=$('timeline');
-  $('empty-state').style.display='none';
-  if(view!=='mission') return;
-  const d=document.createElement('div');
-  d.className='timeline-entry';
-  const t=new Date(evt.ts?evt.ts*1000:Date.now());
-  const ts=t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const icon=ICONS[evt.kind]||defaultIcon;
-  const badge=evt.role?`<span class="entry-badge" style="color:var(--text-muted)">${evt.role}</span>`:'';
-  d.innerHTML=`
-    <div class="entry-icon ${evt.kind}">${icon}</div>
-    <span class="entry-time">${ts}</span>
-    <span class="entry-text">${escHtml(evt.text||'')} ${badge}</span>`;
-  tl.appendChild(d);
-  tl.scrollTop=tl.scrollHeight;
+function addTlItem(evt) {
+  if (evt.kind === 'heartbeat' || evt.kind === 'snapshot') return;
+  if (tlEmpty) tlEmpty.style.display = 'none';
+  const el = document.createElement('div');
+  el.className = 'tl-item';
+  const color = KIND_COLOR[evt.kind] || 'text-muted';
+  const d = new Date(evt.ts * 1000);
+  const ts = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const urlHtml = evt.url ? `<div class="tl-url">${evt.url}</div>` : '';
+  el.innerHTML = `
+    <div class="tl-time">${ts}</div>
+    <div class="tl-dot dot-${evt.kind}" style="background:var(--${color})"></div>
+    <div class="tl-body">
+      <div class="tl-kind kind-${evt.kind}" style="color:var(--${color})">${KIND_LABEL[evt.kind]||evt.kind}</div>
+      <div class="tl-text">${evt.text||''}</div>
+      ${urlHtml}
+    </div>`;
+  tlPanel.appendChild(el);
+  tlPanel.scrollTop = tlPanel.scrollHeight;
 }
 
-function renderTasks(tasks){
-  const tl=$('task-list');
-  if(!tasks||tasks.length===0){
-    tl.innerHTML='<div style="font-size:.75rem;color:var(--text-faint);padding:6px 10px;">No tasks yet</div>';
+// ─── TASK LIST ────────────────────────────────────────────────────────
+const ROLE_ICON = {researcher:'⌕',analyst:'⊛',coder:'⌥',writer:'✦',browser:'⊹',file:'⊟'};
+function renderTasks(tasks) {
+  if (!tasks || !tasks.length) {
+    taskList.innerHTML = '<div class="empty-tasks"><span>⬡</span>No tasks yet.<br/>Enter a goal to begin.</div>';
     return;
   }
-  tl.innerHTML=tasks.map(t=>`
+  taskList.innerHTML = tasks.map(t => `
     <div class="task-item ${t.status||'pending'}">
-      <div class="task-dot ${t.status||'pending'}"></div>
-      <span class="task-role-badge ${t.role}">${t.role}</span>
-      <span style="flex:1;font-size:.74rem;color:var(--text-muted);line-height:1.4">${escHtml((t.goal||'').slice(0,60))}</span>
+      <div class="ti-icon">${ROLE_ICON[t.role]||'○'}</div>
+      <div class="ti-body">
+        <div class="ti-role">${t.role}</div>
+        <div class="ti-goal" title="${t.goal}">${t.goal}</div>
+      </div>
     </div>`).join('');
 }
 
-const STATUS_LABELS={
-  idle:'Idle',thinking:'Thinking…',acting:'Acting',
-  waiting_permission:'Needs Permission',waiting_login:'Login Required',
-  waiting_login_takeover:'You Have Control',done:'Done',error:'Error',cancelled:'Cancelled',
-};
-
-function updateStatus(status,goal){
-  const pill=$('status-pill');
-  pill.className='status-pill '+(status||'idle');
-  $('status-text').textContent=STATUS_LABELS[status]||status;
-  if(goal!==null) $('current-goal').textContent=goal||'';
-
-  const running=['thinking','acting','waiting_permission','waiting_login','waiting_login_takeover'].includes(status);
-  isRunning=running;
-
-  // Blue glow bar
-  $('progress-glow').classList.toggle('active',running);
-
-  // Stop bar (shown while running unless user has takeover)
-  const takeover=status==='waiting_login_takeover';
-  isTakeover=takeover;
-  $('stop-bar-wrap').classList.toggle('active',running&&!takeover);
-
-  // Interaction lock on content area
-  $('run-lock').classList.toggle('active',running&&!takeover);
-
-  // Send button disabled while running
-  $('send-btn').disabled=running;
-
-  // Mid-run inject row
-  $('inject-row').classList.toggle('visible',running);
-  if(!running) $('inject-input').value='';
-
-  // Takeover banner
-  $('takeover-banner').classList.toggle('visible',takeover);
-
-  $('input-hint').textContent=running
-    ?'Add mid-run instructions below ↓'
-    :'Press Enter to send · Shift+Enter for new line';
+// ─── RESULT ───────────────────────────────────────────────────────────
+function showResult(md) {
+  if (!md || !md.trim()) return;
+  resultEmpty.style.display = 'none';
+  resultMd.style.display = 'block';
+  resultMd.innerHTML = renderMd(md);
 }
 
-function showResult(text){
-  if(!text) return;
-  $('result-body').textContent=text;
-  $('result-panel').style.display='block';
-  setView('result');
-}
-
-/* ── SSE ── */
-let sse;
-function connectSSE(){
-  sse=new EventSource(API+'/api/events');
-  sse.onmessage=e=>{
-    let evt;
-    try{evt=JSON.parse(e.data);}catch{return;}
-
-    if(evt.kind==='snapshot'){
-      const s=evt.state||{};
-      updateStatus(s.status,s.goal);
+// ─── SSE ──────────────────────────────────────────────────────────────
+let es;
+function connectSSE() {
+  es = new EventSource('/api/events');
+  es.onmessage = e => {
+    const evt = JSON.parse(e.data);
+    if (evt.kind === 'snapshot') {
+      const s = evt.state;
+      setStatus(s.status);
       renderTasks(s.tasks);
-      if(s.result) showResult(s.result);
-      if(s.timeline&&s.timeline.length){
-        $('timeline').innerHTML='';
-        s.timeline.forEach(appendEntry);
-        if(view==='mission') setView('mission');
-      }
+      if (s.result) showResult(s.result);
+      if (s.timeline) s.timeline.forEach(addTlItem);
+      if (s.login_pending) showLoginOverlay(s.login_site);
       return;
     }
-
-    appendEntry(evt);
-    if(evt.kind==='plan'&&evt.tasks) renderTasks(evt.tasks.map(t=>({...t,status:'pending'})));
-    if(evt.kind==='done'){
-      updateStatus('done','');
-      fetch(API+'/api/result').then(r=>r.json()).then(d=>showResult(d.result));
+    addTlItem(evt);
+    if (evt.kind === 'plan' && evt.tasks) renderTasks(evt.tasks);
+    if (evt.kind === 'task_done' || evt.kind === 'task_start') {
+      fetch('/api/status').then(r=>r.json()).then(s=>renderTasks(s.tasks));
     }
-    if(evt.kind==='error')    updateStatus('error',null);
-    if(evt.kind==='cancelled')updateStatus('idle',null);
-    if(evt.kind==='start')    updateStatus('thinking',evt.text);
-    if(evt.kind==='think')    updateStatus('thinking',null);
-    if(evt.kind==='task_start')updateStatus('acting',null);
-    if(evt.kind==='permission_request'){
-      showPermissionModal(evt.text,evt.action_type);
-      updateStatus('waiting_permission',null);
+    if (evt.kind === 'done' && evt.result_preview) {
+      fetch('/api/result').then(r=>r.json()).then(d=>showResult(d.result));
     }
-    if(evt.kind==='login_required'){
-      showLoginModal(evt.site||evt.text);
-      updateStatus('waiting_login',null);
-    }
-    if(evt.kind==='login_takeover')    updateStatus('waiting_login_takeover',null);
-    if(evt.kind==='login_takeover_done')updateStatus('acting',null);
-    if(evt.kind==='login_creds_provided')updateStatus('acting',null);
-
-    fetch(API+'/api/status').then(r=>r.json())
-      .then(s=>{renderTasks(s.tasks);}).catch(()=>{});
+    if (evt.kind === 'permission_request') showPermOverlay(evt.text, evt.action_type);
+    if (evt.kind === 'login_required') showLoginOverlay(evt.site);
+    if (evt.kind === 'start' || evt.kind === 'think') setStatus('thinking');
+    if (evt.kind === 'task_start') setStatus('acting');
+    if (evt.kind === 'done') { setStatus('done'); fetch('/api/result').then(r=>r.json()).then(d=>showResult(d.result)); }
+    if (evt.kind === 'error') setStatus('error');
+    if (evt.kind === 'cancelled') setStatus('idle');
   };
-  sse.onerror=()=>{setTimeout(connectSSE,2000);};
+  es.onerror = () => setTimeout(connectSSE, 2000);
 }
 connectSSE();
 
-/* ── Permission modal ── */
-function showPermissionModal(desc,actionType){
-  $('modal-title').textContent=`Allow ${(actionType||'action').toUpperCase()} access?`;
-  $('modal-desc').textContent=desc;
-  $('permission-modal').classList.add('visible');
+// ─── ACTIONS ──────────────────────────────────────────────────────────
+function submitGoal() {
+  const goal = document.getElementById('goalInput').value.trim();
+  if (!goal) return;
+  tlPanel.querySelectorAll('.tl-item').forEach(e=>e.remove());
+  if (tlEmpty) tlEmpty.style.display = 'block';
+  resultEmpty.style.display = 'block';
+  resultMd.style.display = 'none';
+  fetch('/api/goal', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({goal})
+  });
 }
-function hidePermissionModal(){$('permission-modal').classList.remove('visible');}
-async function respondPermission(approved){
-  hidePermissionModal();
-  await fetch(API+'/api/permission',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({approved})});
+document.getElementById('goalInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitGoal();
+});
+
+function cancelMission() {
+  fetch('/api/cancel', {method:'POST'});
 }
-$('modal-allow').addEventListener('click',()=>respondPermission(true));
-$('modal-deny') .addEventListener('click',()=>respondPermission(false));
 
-/* ── Login modal ── */
-function showLoginModal(site){
-  $('login-modal-title').textContent=`Login required: ${site||'site'}`;
-  $('cred-email').value='';
-  $('cred-password').value='';
-  $('login-modal').classList.add('visible');
+function sendInject() {
+  const text = document.getElementById('injectInput').value.trim();
+  if (!text) return;
+  fetch('/api/inject', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text})
+  });
+  document.getElementById('injectInput').value = '';
 }
-function hideLoginModal(){$('login-modal').classList.remove('visible');}
 
-$('login-creds-btn').addEventListener('click',async()=>{
-  const email=$('cred-email').value.trim();
-  const pw=$('cred-password').value;
-  if(!email||!pw){
-    $('cred-email').style.borderColor='var(--red)';
-    $('cred-password').style.borderColor='var(--red)';
-    setTimeout(()=>{
-      $('cred-email').style.borderColor='';
-      $('cred-password').style.borderColor='';
-    },1400);
-    return;
-  }
-  hideLoginModal();
-  await fetch(API+'/api/login_creds',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({email,username:email,password:pw})});
-});
-
-$('login-takeover-btn').addEventListener('click',async()=>{
-  hideLoginModal();
-  await fetch(API+'/api/login_take_over',{method:'POST',
-    headers:{'Content-Type':'application/json'},body:'{}'});
-});
-
-$('login-deny-btn').addEventListener('click',async()=>{
-  hideLoginModal();
-  await fetch(API+'/api/login_deny',{method:'POST'});
-});
-
-$('takeover-done-btn').addEventListener('click',async()=>{
-  $('takeover-banner').classList.remove('visible');
-  await fetch(API+'/api/login_take_over',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({done:true})});
-});
-
-/* ── Send goal ── */
-async function sendGoal(){
-  const input=$('goal-input');
-  const goal=input.value.trim();
-  if(!goal||isRunning) return;
-  input.value='';
-  $('timeline').innerHTML='';
-  $('result-panel').style.display='none';
-  $('empty-state').style.display='none';
-  $('timeline').style.display='flex';
-  setView('mission');
-  updateStatus('thinking',goal);
-  await fetch(API+'/api/goal',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({goal})});
+// ─── PERMISSION ───────────────────────────────────────────────────────
+function showPermOverlay(desc, type) {
+  document.getElementById('permDesc').textContent = desc || 'Allow this action?';
+  document.getElementById('permOverlay').classList.add('visible');
 }
-$('send-btn').addEventListener('click',sendGoal);
-$('goal-input').addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendGoal();}
-});
-
-/* ── Mid-run inject ── */
-async function sendInject(){
-  const input=$('inject-input');
-  const text=input.value.trim();
-  if(!text) return;
-  input.value='';
-  await fetch(API+'/api/inject',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({text})});
+function respond(approved) {
+  document.getElementById('permOverlay').classList.remove('visible');
+  fetch('/api/permission', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({approved})
+  });
 }
-$('inject-btn').addEventListener('click',sendInject);
-$('inject-input').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){e.preventDefault();sendInject();}
-});
 
-/* ── Stop ── */
-$('stop-btn').addEventListener('click',async()=>{
-  await fetch(API+'/api/cancel',{method:'POST'});
-  updateStatus('idle','');
-  $('stop-bar-wrap').classList.remove('active');
-  $('progress-glow').classList.remove('active');
-  $('run-lock').classList.remove('active');
-});
-
-/* ── Suggestion chips ── */
-document.querySelectorAll('.suggestion-chip').forEach(btn=>{
-  btn.addEventListener('click',()=>{$('goal-input').value=btn.dataset.goal;sendGoal();});
-});
-})();
+// ─── LOGIN ────────────────────────────────────────────────────────────
+function showLoginOverlay(site) {
+  document.getElementById('loginSite').textContent = 'Site: ' + (site||'unknown');
+  document.getElementById('loginOverlay').classList.add('visible');
+}
+function submitCreds() {
+  const email = document.getElementById('loginEmail').value;
+  const pw    = document.getElementById('loginPw').value;
+  document.getElementById('loginOverlay').classList.remove('visible');
+  fetch('/api/login_creds', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email, password:pw})
+  });
+}
+function takeOver() {
+  document.getElementById('loginOverlay').classList.remove('visible');
+  fetch('/api/login_take_over', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({})});
+}
+function skipLogin() {
+  document.getElementById('loginOverlay').classList.remove('visible');
+  fetch('/api/login_deny', {method:'POST'});
+}
 </script>
 </body>
 </html>
