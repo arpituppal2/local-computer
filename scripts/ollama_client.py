@@ -1,10 +1,10 @@
 """Ollama client with streaming, per-role token caps, context-window limits, and GPU pinning.
 
-Mac M4 optimizations applied:
-  - stream=True on all calls to avoid full-response buffering
-  - num_ctx capped per model to reduce KV-cache memory pressure
-  - num_predict capped per role (router/actor/planner/analyst/heavy)
-  - memory fallback logic retained
+Mac 16GB optimizations:
+  - Memory threshold lowered — Chromium eats ~1.5GB, leaving ~2-3GB free for Ollama
+  - All roles default to qwen3:4b so no model swapping mid-task
+  - stream=True to avoid full-response buffering
+  - num_ctx capped to 2048 to keep KV-cache small
 """
 from __future__ import annotations
 import json, logging, psutil
@@ -16,29 +16,27 @@ _CFG_PATH = ROOT / "configs" / "models.json"
 
 _cfg = json.loads(_CFG_PATH.read_text()) if _CFG_PATH.exists() else {}
 
+# On 16GB with Chromium running, use 4b everywhere to avoid swapping
 MODEL_ROUTER  = _cfg.get("router",  "qwen3:4b")
-MODEL_ACTOR   = _cfg.get("actor",   "qwen3:8b")
-MODEL_PLANNER = _cfg.get("planner", "qwen3:8b")
-MODEL_ANALYST = _cfg.get("analyst", "qwen3:8b")
-MODEL_HEAVY   = _cfg.get("heavy",   "qwen3:14b")
+MODEL_ACTOR   = _cfg.get("actor",   "qwen3:4b")
+MODEL_PLANNER = _cfg.get("planner", "qwen3:4b")
+MODEL_ANALYST = _cfg.get("analyst", "qwen3:4b")
+MODEL_HEAVY   = _cfg.get("heavy",   "qwen3:8b")
 
-# Complexity score above which the router should send tasks to a chatbot UI
 CHATBOT_THRESHOLD: int = _cfg.get("chatbot_threshold", 7)
 
 _TIMEOUTS = _cfg.get("timeouts", {
-    "qwen3:4b":  30,
-    "qwen3:8b":  60,
+    "qwen3:4b":  45,
+    "qwen3:8b":  90,
     "qwen3:14b": 180,
 })
 
-# Context window sizes — kept small to reduce KV-cache RAM on 16 GB unified memory
 _CTX_SIZES: dict[str, int] = _cfg.get("context_sizes", {
     "qwen3:4b":  2048,
     "qwen3:8b":  2048,
     "qwen3:14b": 4096,
 })
 
-# Per-role generation caps — short outputs for routing, longer for heavy analysis
 _MAX_TOKENS: dict[str, int] = _cfg.get("max_tokens", {
     "router":   256,
     "actor":    1024,
@@ -47,7 +45,6 @@ _MAX_TOKENS: dict[str, int] = _cfg.get("max_tokens", {
     "heavy":    2048,
 })
 
-# Map model → role so we can look up the right cap in call()
 _MODEL_ROLE: dict[str, str] = {
     MODEL_ROUTER:  "router",
     MODEL_ACTOR:   "actor",
@@ -62,12 +59,12 @@ _client = httpx.Client(base_url=BASE_URL, timeout=None)
 
 def _memory_ok_for(model: str) -> bool:
     available = psutil.virtual_memory().available / (1024 ** 3)
-    required = 9.5 if "14b" in model else 3.5 if "8b" in model else 2.0
+    # Lowered thresholds: Chromium takes ~1.5GB, so we have ~2-3GB free on 16GB
+    required = 6.0 if "14b" in model else 1.8 if "8b" in model else 1.2
     return available >= required
 
 
 def _fallback(model: str) -> str:
-    """Downgrade to a smaller model if we don't have enough free RAM."""
     if "14b" in model and not _memory_ok_for(model):
         logging.warning(f"[ollama] Low memory — downgrading {model} → qwen3:8b")
         return "qwen3:8b"
@@ -95,7 +92,6 @@ def _max_tokens_for(model: str) -> int:
     role = _MODEL_ROLE.get(model)
     if role:
         return _MAX_TOKENS.get(role, 1024)
-    # fallback: key substring match
     if "14b" in model:
         return _MAX_TOKENS.get("heavy", 2048)
     if "8b" in model:
@@ -123,20 +119,15 @@ _validate_models()
 
 
 def call(prompt: str, model: str = MODEL_ACTOR, system: str = "") -> str:
-    """Call Ollama with streaming enabled; returns full response string.
-
-    Streaming prevents full-response buffering, making the pipeline feel
-    3-5x more responsive on Apple Silicon unified memory.
-    """
     model = _fallback(model)
     timeout = _timeout_for(model)
     payload: dict = {
         "model":  model,
         "prompt": prompt,
-        "stream": True,   # stream to avoid buffering the full response
+        "stream": True,
         "options": {
             "num_predict": _max_tokens_for(model),
-            "num_ctx":     _ctx_for(model),   # cap KV-cache to save unified memory
+            "num_ctx":     _ctx_for(model),
         },
     }
     if system:
@@ -168,10 +159,6 @@ def call(prompt: str, model: str = MODEL_ACTOR, system: str = "") -> str:
 
 
 def call_json(prompt: str, model: str = MODEL_PLANNER, system: str = "") -> dict:
-    """Call Ollama and parse the response as JSON.
-
-    Note: argument order is (prompt, model) — matches the rest of the codebase.
-    """
     raw = call(prompt, model=model, system=system)
     if not raw:
         return {}

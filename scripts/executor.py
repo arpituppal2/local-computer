@@ -1,17 +1,5 @@
 """Browser action executor — click, type, fill, scroll, hover, drag, screenshot,
 file read/write, code execution, and batch actions.
-
-New actions vs previous version:
-  mouse_move   — move cursor to (x, y) absolute page coords
-  hover        — hover over element text or CSS selector
-  drag         — drag from (x1,y1) to (x2,y2)
-  screenshot   — save a screenshot to outputs/
-  read_file    — read a local file and return its text
-  write_file   — write text to a local file
-  run_code     — run a Python snippet in a subprocess and return stdout
-  open_tab     — open a new browser tab to a URL
-  close_tab    — close the current tab
-  wait         — sleep N ms
 """
 from __future__ import annotations
 import json
@@ -41,7 +29,6 @@ def _wait_for_load(page, timeout: int = 3000) -> None:
 
 
 def _locate(page, text: str, timeout: int = CLICK_TIMEOUT):
-    """Resolve a target: try exact text, then contains-text, then CSS selector."""
     for loc in [
         page.get_by_text(text, exact=True),
         page.locator(f"text={text}"),
@@ -62,18 +49,20 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
     val = action.get("value", "")
     text = str(action.get("text") or action.get("selector") or val or "")
 
-    # ── Navigation ────────────────────────────────────────────────────────
-    if act == "navigate":
+    # ── goto (alias used by BrowserAgent) ──────────────────────────────────
+    if act in ("goto", "navigate"):
+        url = action.get("url") or str(val)
+        if not url.startswith(("http://", "https://", "chrome://")):
+            url = "https://" + url
         try:
-            page.goto(str(val), timeout=NAV_TIMEOUT, wait_until="domcontentloaded")
+            page.goto(url, timeout=NAV_TIMEOUT, wait_until="domcontentloaded")
             return {"ok": True}
         except Exception as e:
-            logging.warning(f"[executor] navigate failed: {e}")
+            logging.warning(f"[executor] goto failed: {e}")
             return {"ok": False, "error": str(e)}
 
-    # ── Click ─────────────────────────────────────────────────────────────
+    # ── Click ──────────────────────────────────────────────────────────────
     elif act == "click":
-        # Prefer coordinate click if x/y provided (more reliable on dynamic UIs)
         x, y = action.get("x"), action.get("y")
         if x is not None and y is not None:
             try:
@@ -82,6 +71,15 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
                 return {"ok": True}
             except Exception as e:
                 return {"ok": False, "error": str(e)}
+        # Try CSS selector first if it looks like one
+        selector = action.get("selector", "")
+        if selector:
+            try:
+                page.locator(selector).first.click(timeout=CLICK_TIMEOUT)
+                _wait_for_load(page)
+                return {"ok": True}
+            except Exception:
+                pass
         loc = _locate(page, text)
         if loc is None:
             return {"ok": False, "error": f"no element found for '{text}'"}
@@ -92,7 +90,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Hover ─────────────────────────────────────────────────────────────
+    # ── Hover ───────────────────────────────────────────────────────────────
     elif act == "hover":
         x, y = action.get("x"), action.get("y")
         if x is not None and y is not None:
@@ -110,7 +108,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Mouse move (absolute page coords) ────────────────────────────────
+    # ── Mouse move ─────────────────────────────────────────────────────────
     elif act == "mouse_move":
         try:
             page.mouse.move(float(action.get("x", 0)), float(action.get("y", 0)))
@@ -118,7 +116,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Drag ──────────────────────────────────────────────────────────────
+    # ── Drag ────────────────────────────────────────────────────────────────
     elif act == "drag":
         try:
             x1, y1 = float(action["x1"]), float(action["y1"])
@@ -131,7 +129,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Type (raw keyboard) ───────────────────────────────────────────────
+    # ── Type ─────────────────────────────────────────────────────────────────
     elif act == "type":
         try:
             page.keyboard.type(str(val))
@@ -139,36 +137,53 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Fill (form input) ─────────────────────────────────────────────────
+    # ── Fill ─────────────────────────────────────────────────────────────────
     elif act == "fill":
+        selector = action.get("selector", "input:visible")
+        fill_val = action.get("value", val)
         try:
-            selector = action.get("selector", "input:visible")
-            page.locator(selector).first.fill(str(val), timeout=CLICK_TIMEOUT)
+            page.locator(selector).first.fill(str(fill_val), timeout=CLICK_TIMEOUT)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Press (keyboard key) ──────────────────────────────────────────────
+    # ── Press ─────────────────────────────────────────────────────────────────
     elif act == "press":
+        key = action.get("key") or str(val)
         try:
-            page.keyboard.press(str(val))
+            page.keyboard.press(key)
             _wait_for_load(page)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Scroll ────────────────────────────────────────────────────────────
+    # ── Scroll ───────────────────────────────────────────────────────────────
     elif act == "scroll":
         direction = str(action.get("direction", "down")).lower()
-        amount    = int(val or action.get("amount", 600))
-        delta_y   = amount if direction == "down" else -amount
+        # Accept amount from multiple field names the LLM might use
+        raw_amount = action.get("amount") or action.get("value") or action.get("pixels") or 600
+        try:
+            amount = int(raw_amount)
+        except (TypeError, ValueError):
+            amount = 600
+        delta_y = amount if direction == "down" else -amount
         try:
             page.evaluate(f"window.scrollBy(0, {delta_y})")
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Go back ───────────────────────────────────────────────────────────
+    # ── Select (dropdown) ────────────────────────────────────────────────────
+    elif act == "select":
+        selector = action.get("selector", "select")
+        select_val = action.get("value", val)
+        try:
+            page.locator(selector).first.select_option(str(select_val), timeout=CLICK_TIMEOUT)
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Go back ──────────────────────────────────────────────────────────────
     elif act == "go_back":
         try:
             page.go_back(timeout=NAV_TIMEOUT)
@@ -177,7 +192,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Screenshot ────────────────────────────────────────────────────────
+    # ── Screenshot ────────────────────────────────────────────────────────────
     elif act == "screenshot":
         try:
             OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -188,7 +203,7 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Get page text ─────────────────────────────────────────────────────
+    # ── Get page text ─────────────────────────────────────────────────────────
     elif act == "get_page_text":
         cached = action.get("_cached_text")
         if cached:
@@ -199,17 +214,17 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Open new tab ──────────────────────────────────────────────────────
+    # ── Open new tab ─────────────────────────────────────────────────────────
     elif act == "open_tab":
         try:
             new_page = context.new_page()
             if val:
                 new_page.goto(str(val), timeout=NAV_TIMEOUT, wait_until="domcontentloaded")
-            return {"ok": True, "note": "new tab opened; subsequent actions target original page"}
+            return {"ok": True, "note": "new tab opened"}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Close tab ─────────────────────────────────────────────────────────
+    # ── Close tab ─────────────────────────────────────────────────────────────
     elif act == "close_tab":
         try:
             page.close()
@@ -217,27 +232,26 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Wait ──────────────────────────────────────────────────────────────
+    # ── Wait ─────────────────────────────────────────────────────────────────
     elif act == "wait":
         try:
-            ms = int(val or 1000)
+            ms = int(action.get("ms") or action.get("value") or 1000)
             time.sleep(ms / 1000)
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Read local file ───────────────────────────────────────────────────
+    # ── Read local file ────────────────────────────────────────────────────────
     elif act == "read_file":
         try:
             p = Path(str(val)).expanduser()
             if not p.exists():
                 return {"ok": False, "error": f"file not found: {p}"}
-            content = p.read_text(errors="replace")
-            return {"ok": True, "content": content[:8000]}
+            return {"ok": True, "content": p.read_text(errors="replace")[:8000]}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Write local file ──────────────────────────────────────────────────
+    # ── Write local file ───────────────────────────────────────────────────────
     elif act == "write_file":
         try:
             p = Path(str(action.get("path", val))).expanduser()
@@ -247,13 +261,11 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    # ── Run Python code snippet ───────────────────────────────────────────
+    # ── Run Python code ───────────────────────────────────────────────────────
     elif act == "run_code":
         code = str(action.get("code", val))
         try:
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".py", delete=False
-            ) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
                 f.write(textwrap.dedent(code))
                 tmp = f.name
             result = subprocess.run(
@@ -275,17 +287,20 @@ def execute(page, context, action: dict, depth: int = 0) -> dict:  # noqa: C901
             except Exception:
                 pass
 
-    # ── Batch ─────────────────────────────────────────────────────────────
+    # ── Batch ────────────────────────────────────────────────────────────────
     elif act == "batch":
         if depth >= 2:
             return {"ok": False, "error": "batch depth limit reached"}
-        sub_actions = action.get("actions", [])[:BATCH_MAX]
         results = []
-        for sub in sub_actions:
+        for sub in action.get("actions", [])[:BATCH_MAX]:
             r = execute(page, context, sub, depth=depth + 1)
             results.append(r)
             if not r.get("ok"):
                 break
         return {"ok": True, "results": results}
+
+    # ── Done (BrowserAgent sentinel — should never reach executor) ──────
+    elif act == "done":
+        return {"ok": True}
 
     return {"ok": False, "error": f"unknown action: {act}"}
