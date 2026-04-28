@@ -1,14 +1,30 @@
 {
-  "router":   "qwen3:4b",
-  "actor":    "qwen3:4b",
+  "router":   "qwen3:8b",
+  "actor":    "qwen3:8b",
   "planner":  "qwen3:8b",
   "analyst":  "qwen3:8b",
   "heavy":    "qwen3:14b",
   "ollama_host": "http://localhost:11434",
 
-  "_comment_thresholds": "chatbot_threshold: complexity score (0-10) at or above which tasks are routed to AI chatbot UI instead of local Ollama. max_local_parallel: max simultaneous qwen3:4b/8b workers.",
+  "_comment_thresholds": "chatbot_threshold: complexity score (0-10) at or above which tasks are routed to AI chatbot UI instead of local Ollama. max_local_parallel: max simultaneous workers — aligned with OLLAMA_MAX_LOADED_MODELS in run.sh to prevent model-swap thrashing on 16GB.",
   "chatbot_threshold": 7,
-  "max_local_parallel": 3,
+  "max_local_parallel": 2,
+
+  "_comment_context": "context_sizes: KV-cache window per model. Kept small to reduce unified-memory pressure on 16GB M4. Increase only if tasks require longer context.",
+  "context_sizes": {
+    "qwen3:4b":  2048,
+    "qwen3:8b":  2048,
+    "qwen3:14b": 4096
+  },
+
+  "_comment_tokens": "max_tokens: per-role generation cap. Router/planner only need short structured JSON; actor/analyst need more room.",
+  "max_tokens": {
+    "router":   256,
+    "actor":    1024,
+    "planner":  512,
+    "analyst":  1500,
+    "heavy":    2048
+  },
 
   "_comment_chatbot": "chatbot_backends: override selectors/URLs per service. Leave empty to use built-in defaults in ai_chatbot_subagent.py.",
   "chatbot_backends": {

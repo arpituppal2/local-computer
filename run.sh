@@ -3,11 +3,14 @@ set -euo pipefail
 
 AIDIR="$(cd "$(dirname "$0")" && pwd)"
 
-# --- GPU / Ollama env (max out your 16GB unified memory) ---
+# --- GPU / Ollama env (optimized for 16GB unified memory on M4) ---
+# OLLAMA_MAX_VRAM: reserve ~2GB headroom for system + browser
 export OLLAMA_MAX_VRAM=14336
 export OLLAMA_FLASH_ATTENTION=1
+# Keep only 1 model loaded at a time — swapping two models on 16GB is slower
+# than serving one model with 2 parallel threads. Aligned with max_local_parallel=2.
+export OLLAMA_MAX_LOADED_MODELS=1
 export OLLAMA_NUM_PARALLEL=2
-export OLLAMA_MAX_LOADED_MODELS=2
 
 # --- venv ---
 VENV="$AIDIR/.venv"
@@ -67,7 +70,7 @@ if ! ollama list >/dev/null 2>&1; then
 fi
 
 # --- Ollama model check (skip pull if already present) ---
-for MODEL in qwen3:4b qwen3:8b; do
+for MODEL in qwen3:8b; do
   if ! ollama list 2>/dev/null | grep -q "$MODEL"; then
     echo "[setup] Pulling $MODEL (required)..."
     ollama pull "$MODEL" || echo "[warn] Could not pull $MODEL — continuing anyway."
