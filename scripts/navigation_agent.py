@@ -45,6 +45,24 @@ _LOCAL_KEYWORDS = (
     "what is 2", "what is 1",
 )
 
+# ── macOS / 16 GB: disable GPU in the automation window so all GPU
+#    budget stays with Ollama and the dashboard.  channel="chrome"
+#    also bypasses macOS sandbox restrictions that silently drop
+#    Playwright click/type events on many real-world sites.
+_BROWSER_ARGS = [
+    "--disable-gpu",
+    "--disable-gpu-rasterization",
+    "--disable-gpu-compositing",
+    "--disable-software-rasterizer",
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-extensions",
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-renderer-backgrounding",
+    "--disable-backgrounding-occluded-windows",
+]
+
 # JS injected once per page: only block isTrusted (real human) events
 _LOCK_SCRIPT = """
 (() => {
@@ -69,12 +87,13 @@ _BANNER_SCRIPT = """
   const b = document.createElement('div');
   b.id = 'lc-agent-banner';
   Object.assign(b.style, {
-    position:'fixed', top:'0', left:'0', width:'100%', height:'32px',
-    background:'#0f172a', color:'#94a3b8', font:'500 11px/32px ui-monospace,monospace',
+    position:'fixed', top:'0', left:'0', width:'100%', height:'28px',
+    background:'#060c14', color:'#18c9c9',
+    font:'500 10px/28px "DM Mono",ui-monospace,monospace',
     textAlign:'center', zIndex:'2147483647', pointerEvents:'none',
-    userSelect:'none', letterSpacing:'.06em'
+    userSelect:'none', letterSpacing:'.08em', borderBottom:'1px solid rgba(24,201,201,.18)'
   });
-  b.textContent = '\u26a1 LOCALCOMPUTER AGENT ACTIVE — READ ONLY';
+  b.textContent = 'LC AGENT ACTIVE — READ ONLY';
   document.body && document.body.prepend(b);
 })();
 """
@@ -266,10 +285,29 @@ def run_stage(page, context, goal: str, stage: dict, memory: Memory, log: EventL
 
 
 def get_browser_and_page(p):
-    browser = p.chromium.launch(headless=False, args=["--disable-extensions"])
-    ctx  = browser.new_context(viewport={"width": 1280, "height": 800})
+    """Launch Chromium with GPU disabled to preserve unified memory for Ollama.
+    Uses channel='chrome' on macOS so Playwright receives real CDP events
+    instead of being silently dropped by the macOS sandbox."""
+    try:
+        # Prefer real Chrome install (bypasses macOS accessibility sandbox)
+        browser = p.chromium.launch(
+            headless=False,
+            channel="chrome",
+            args=_BROWSER_ARGS,
+        )
+    except Exception:
+        # Fallback to bundled Chromium if Chrome is not installed
+        browser = p.chromium.launch(
+            headless=False,
+            args=_BROWSER_ARGS,
+        )
 
-    # Inject lock + banner on every new page/navigation
+    ctx = browser.new_context(
+        viewport={"width": 1280, "height": 800},
+        java_script_enabled=True,
+    )
+
+    # Inject lock + banner on every navigation
     ctx.add_init_script(_LOCK_SCRIPT)
     ctx.add_init_script(_BANNER_SCRIPT)
 
