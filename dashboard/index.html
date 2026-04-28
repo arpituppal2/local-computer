@@ -14,7 +14,8 @@ html{font-size:15px;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
   --bg:#0d0d0d;--surface:#131313;--surface-2:#1a1a1a;--surface-3:#222;
   --border:rgba(255,255,255,.08);--border-bright:rgba(255,255,255,.14);
   --text:#e8e8e8;--text-muted:#888;--text-faint:#444;
-  --accent:#20b2aa;--accent-dim:rgba(32,178,170,.15);--accent-glow:rgba(32,178,170,.35);
+  --accent:#20b2aa;--accent-dim:rgba(32,178,170,.15);--accent-glow:rgba(32,178,170,.45);
+  --accent-glow-bright:rgba(32,178,170,.7);
   --yellow:#f5c518;--red:#ff5f5f;--green:#4caf7d;--purple:#a78bfa;
   --radius:12px;--radius-sm:7px;--radius-pill:999px;
   --font:'Inter',system-ui,sans-serif;
@@ -23,6 +24,8 @@ html{font-size:15px;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
 }
 body{background:var(--bg);color:var(--text);font-family:var(--font);
   min-height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── Layout ── */
 .app{display:flex;height:100dvh;overflow:hidden;}
 .sidebar{width:260px;flex-shrink:0;background:var(--surface);
   border-right:1px solid var(--border);display:flex;flex-direction:column;
@@ -64,6 +67,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .task-role-badge.researcher{color:#60a5fa;}.task-role-badge.analyst{color:#a78bfa;}
 .task-role-badge.coder{color:#f9a825;}.task-role-badge.writer{color:#4caf7d;}
 .task-role-badge.browser{color:var(--accent);}.task-role-badge.file{color:#fb923c;}
+
+/* ── Main ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
 .topbar{display:flex;align-items:center;justify-content:space-between;
   padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
@@ -88,6 +93,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
   display:flex;align-items:center;gap:5px;transition:all var(--transition);}
 .topbar-btn:hover{background:var(--surface-2);color:var(--text);border-color:var(--border-bright);}
 .content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+
+/* ── Empty state ── */
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:20px;padding:40px;text-align:center;}
 .empty-icon{width:64px;height:64px;border-radius:18px;
@@ -101,6 +108,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
   color:var(--text-muted);font-size:.78rem;cursor:pointer;
   transition:all var(--transition);}
 .suggestion-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+
+/* ── Timeline ── */
 .timeline-view{flex:1;overflow-y:auto;padding:16px 20px;
   display:flex;flex-direction:column;gap:6px;}
 .timeline-entry{display:flex;gap:12px;align-items:flex-start;
@@ -124,6 +133,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .entry-badge{font-size:.65rem;font-weight:600;letter-spacing:.06em;
   text-transform:uppercase;padding:1px 6px;border-radius:var(--radius-pill);
   border:1px solid currentColor;flex-shrink:0;}
+
+/* ── Result panel ── */
 .result-panel{border-top:1px solid var(--border);background:var(--surface);
   padding:20px;max-height:45%;overflow-y:auto;flex-shrink:0;}
 .result-header{font-size:.75rem;font-weight:600;letter-spacing:.05em;
@@ -132,38 +143,88 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .result-header::after{content:'';flex:1;height:1px;background:var(--border);}
 .result-body{font-size:.85rem;line-height:1.75;color:var(--text);
   white-space:pre-wrap;font-family:var(--font);}
+
+/* ── Input area ── */
 .input-area{flex-shrink:0;padding:12px 20px 16px;border-top:1px solid var(--border);
   background:var(--surface);position:relative;}
+
+/* Perplexity-style blue glow bar at top of input area */
 .progress-glow{
   position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,
-    transparent 0%,var(--accent) 20%,rgba(32,178,170,.9) 50%,var(--accent) 80%,transparent 100%);
-  background-size:200% 100%;opacity:0;transition:opacity .3s;
-  border-radius:0;pointer-events:none;
+    transparent 0%,
+    var(--accent) 15%,
+    #7dd3fc 35%,
+    rgba(125,211,252,.95) 50%,
+    #7dd3fc 65%,
+    var(--accent) 85%,
+    transparent 100%);
+  background-size:200% 100%;opacity:0;
+  transition:opacity .4s ease;
+  pointer-events:none;z-index:5;
+  filter:blur(0.5px);
 }
-.progress-glow.active{opacity:1;animation:glowSlide 1.8s linear infinite;}
-@keyframes glowSlide{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-.running-overlay{
-  position:absolute;inset:0;background:transparent;z-index:10;
-  display:none;flex-direction:column;align-items:center;
-  justify-content:flex-end;padding-bottom:20px;pointer-events:none;
+.progress-glow.active{
+  opacity:1;
+  animation:glowSlide 2s linear infinite;
+  box-shadow:0 0 12px 1px var(--accent-glow-bright),
+             0 0 28px 4px rgba(125,211,252,.25);
 }
-.running-overlay.active{display:flex;pointer-events:all;}
+@keyframes glowSlide{
+  0%  {background-position:200% 0;}
+  100%{background-position:-200% 0;}
+}
+
+/* Interaction lock overlay — covers entire main area while running */
+.run-lock{
+  position:absolute;inset:0;
+  background:transparent;
+  z-index:20;
+  display:none;
+  cursor:not-allowed;
+}
+.run-lock.active{display:block;}
+
+/* Stop bar — pinned bottom-center over lock */
+.stop-bar-wrap{
+  position:absolute;
+  bottom:88px; /* sits just above the input-area */
+  left:50%;transform:translateX(-50%);
+  z-index:25;
+  pointer-events:all;
+  display:none;
+  animation:riseIn .3s cubic-bezier(0.16,1,0.3,1);
+}
+.stop-bar-wrap.active{display:flex;}
+@keyframes riseIn{
+  from{opacity:0;transform:translateX(-50%) translateY(14px);}
+  to  {opacity:1;transform:translateX(-50%) translateY(0);}
+}
 .stop-bar{
-  pointer-events:all;display:flex;align-items:center;gap:10px;
-  background:rgba(13,13,13,.85);backdrop-filter:blur(12px);
-  border:1px solid rgba(255,95,95,.25);border-radius:var(--radius-pill);
-  padding:8px 18px 8px 14px;
-  box-shadow:0 4px 24px rgba(0,0,0,.5),0 0 0 1px rgba(255,95,95,.08);
-  animation:fadein .25s ease;
+  display:flex;align-items:center;gap:10px;
+  background:rgba(13,13,13,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(32,178,170,.28);border-radius:var(--radius-pill);
+  padding:9px 18px 9px 14px;
+  box-shadow:0 4px 32px rgba(0,0,0,.55),
+             0 0 0 1px rgba(32,178,170,.1),
+             0 0 20px 2px rgba(32,178,170,.12);
 }
-.stop-bar-pulse{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse .8s infinite;}
+.stop-bar-pulse{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px 2px var(--accent-glow);
+  animation:pulse .9s infinite;
+}
 .stop-bar-label{font-size:.78rem;color:var(--text-muted);}
-.stop-btn{padding:5px 14px;border-radius:var(--radius-pill);
-  background:rgba(255,95,95,.12);border:1px solid rgba(255,95,95,.3);
+.stop-btn{
+  padding:5px 16px;border-radius:var(--radius-pill);
+  background:rgba(255,95,95,.1);border:1px solid rgba(255,95,95,.3);
   color:var(--red);font-size:.78rem;font-weight:600;cursor:pointer;
-  transition:all var(--transition);}
+  transition:all var(--transition);
+}
 .stop-btn:hover{background:rgba(255,95,95,.22);border-color:var(--red);}
+
+/* Input wrap */
 .input-wrap{display:flex;gap:8px;align-items:flex-end;
   background:var(--surface-2);border:1px solid var(--border);
   border-radius:var(--radius);padding:10px 10px 10px 16px;
@@ -183,6 +244,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .send-btn:disabled{background:var(--surface-3);cursor:not-allowed;}
 .send-btn:disabled svg{color:var(--text-faint);}
 .input-hint{font-size:.7rem;color:var(--text-faint);margin-top:6px;padding:0 4px;}
+
+/* Mid-run inject row */
 .inject-row{display:none;margin-top:8px;animation:fadein .2s ease;}
 .inject-row.visible{display:flex;gap:8px;align-items:center;}
 .inject-input{flex:1;background:var(--surface-3);border:1px solid var(--border);
@@ -196,15 +259,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
   color:var(--accent);font-size:.78rem;font-weight:600;cursor:pointer;
   white-space:nowrap;transition:all var(--transition);}
 .inject-btn:hover{background:var(--accent);color:#fff;}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);
+
+/* ── Takeover banner ── */
+.takeover-banner{display:none;align-items:center;justify-content:space-between;
+  gap:12px;padding:10px 16px;background:rgba(167,139,250,.1);
+  border:1px solid rgba(167,139,250,.25);border-radius:var(--radius-sm);
+  margin-bottom:8px;animation:fadein .25s ease;}
+.takeover-banner.visible{display:flex;}
+.takeover-text{font-size:.78rem;color:var(--purple);line-height:1.4;}
+.takeover-done-btn{padding:5px 14px;border-radius:var(--radius-pill);
+  background:rgba(167,139,250,.15);border:1px solid var(--purple);
+  color:var(--purple);font-size:.78rem;font-weight:600;cursor:pointer;
+  white-space:nowrap;transition:all var(--transition);}
+.takeover-done-btn:hover{background:var(--purple);color:#fff;}
+
+/* ── Modal ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);
   display:grid;place-items:center;z-index:100;
-  backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s;}
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .22s;}
 .modal-backdrop.visible{opacity:1;pointer-events:all;}
 .modal{background:var(--surface-2);border:1px solid var(--border-bright);
-  border-radius:var(--radius);padding:28px;max-width:420px;
+  border-radius:var(--radius);padding:28px;max-width:440px;
   width:calc(100% - 40px);box-shadow:var(--shadow);
-  transform:translateY(12px);
-  transition:transform .22s cubic-bezier(0.16,1,0.3,1);}
+  transform:translateY(14px);
+  transition:transform .24s cubic-bezier(0.16,1,0.3,1);}
 .modal-backdrop.visible .modal{transform:translateY(0);}
 .modal-icon{width:44px;height:44px;border-radius:12px;
   display:grid;place-items:center;margin-bottom:14px;}
@@ -236,17 +315,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 .modal-divider::before,.modal-divider::after{content:'';position:absolute;
   top:50%;width:42%;height:1px;background:var(--border);}
 .modal-divider::before{left:0;}.modal-divider::after{right:0;}
-.takeover-banner{display:none;align-items:center;justify-content:space-between;
-  gap:12px;padding:10px 16px;background:rgba(167,139,250,.1);
-  border:1px solid rgba(167,139,250,.25);border-radius:var(--radius-sm);
-  margin-bottom:8px;animation:fadein .25s ease;}
-.takeover-banner.visible{display:flex;}
-.takeover-text{font-size:.78rem;color:var(--purple);line-height:1.4;}
-.takeover-done-btn{padding:5px 14px;border-radius:var(--radius-pill);
-  background:rgba(167,139,250,.15);border:1px solid var(--purple);
-  color:var(--purple);font-size:.78rem;font-weight:600;cursor:pointer;
-  white-space:nowrap;transition:all var(--transition);}
-.takeover-done-btn:hover{background:var(--purple);color:#fff;}
+
+/* ── Animations ── */
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 ::-webkit-scrollbar{width:4px;height:4px;}
@@ -256,6 +326,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
 </head>
 <body>
 <div class="app">
+  <!-- ── Sidebar ── -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo">
@@ -293,6 +364,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
       </div>
     </div>
   </aside>
+
+  <!-- ── Main ── -->
   <div class="main">
     <div class="topbar">
       <div class="topbar-left">
@@ -305,13 +378,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
       </div>
       <div class="topbar-right" id="topbar-right"></div>
     </div>
+
+    <!-- Takeover banner -->
     <div class="takeover-banner" id="takeover-banner">
       <span class="takeover-text">
-        &#128432; <strong>You have control.</strong> Complete login in the browser window, then click Done.
+        &#128432; <strong>You have control.</strong> Complete the login in the browser, then click Done.
       </span>
       <button class="takeover-done-btn" id="takeover-done-btn">Done</button>
     </div>
+
+    <!-- Content area -->
     <div class="content" id="content">
+      <!-- Run lock — blocks all clicks on the content area while agent is running -->
+      <div class="run-lock" id="run-lock" title="Agent is working…"></div>
+
       <div class="empty-state" id="empty-state">
         <div class="empty-icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
@@ -322,7 +402,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
           </svg>
         </div>
         <div class="empty-title">What should I do?</div>
-        <div class="empty-sub">Describe a task. I'll plan it, ask for any permissions I need, and get it done autonomously.</div>
+        <div class="empty-sub">Describe a task. I'll plan it, ask for permissions, and get it done.</div>
         <div class="suggestions">
           <button class="suggestion-chip" data-goal="Search the web for the latest news on local LLMs and write a summary">Latest LLM news</button>
           <button class="suggestion-chip" data-goal="Find the top 5 papers on AI agents published this month and summarize them">AI agent papers</button>
@@ -331,24 +411,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
           <button class="suggestion-chip" data-goal="Write a Python script that computes the first 1000 prime numbers and save it to primes.py">Code: primes.py</button>
         </div>
       </div>
+
       <div class="timeline-view" id="timeline" style="display:none"></div>
       <div class="result-panel" id="result-panel" style="display:none">
         <div class="result-header">Result</div>
         <div class="result-body" id="result-body"></div>
       </div>
     </div>
+
+    <!-- ── Input area ── -->
     <div class="input-area">
+      <!-- Blue glowy progress bar — Perplexity-style -->
       <div class="progress-glow" id="progress-glow"></div>
-      <div class="running-overlay" id="running-overlay">
+
+      <!-- Stop bar — floats above input area while running -->
+      <div class="stop-bar-wrap" id="stop-bar-wrap">
         <div class="stop-bar">
           <div class="stop-bar-pulse"></div>
           <span class="stop-bar-label">Agent is working&#8230;</span>
-          <button class="stop-btn" id="stop-btn">Stop</button>
+          <button class="stop-btn" id="stop-btn">&#9632;&nbsp;Stop</button>
         </div>
       </div>
+
       <div class="input-wrap">
         <textarea id="goal-input" placeholder="Ask me to do anything&#8230;" rows="1"></textarea>
-        <button class="send-btn" id="send-btn">
+        <button class="send-btn" id="send-btn" aria-label="Send">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.5">
             <line x1="22" y1="2" x2="11" y2="13"/>
@@ -356,15 +443,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
           </svg>
         </button>
       </div>
+
+      <!-- Mid-run instruction inject -->
       <div class="inject-row" id="inject-row">
         <input class="inject-input" id="inject-input"
-               placeholder="Add instruction mid-run&#8230; (e.g. 'also check pricing')"/>
+               placeholder="Add an instruction while running&#8230; (e.g. 'also check pricing')"/>
         <button class="inject-btn" id="inject-btn">Send</button>
       </div>
+
       <div class="input-hint" id="input-hint">Press Enter to send &middot; Shift+Enter for new line</div>
     </div>
   </div>
 </div>
+
+<!-- ── Permission modal ── -->
 <div class="modal-backdrop" id="permission-modal">
   <div class="modal">
     <div class="modal-icon yellow">
@@ -381,6 +473,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
     </div>
   </div>
 </div>
+
+<!-- ── Login modal ── -->
 <div class="modal-backdrop" id="login-modal">
   <div class="modal">
     <div class="modal-icon purple">
@@ -391,25 +485,40 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);
       </svg>
     </div>
     <div class="modal-title" id="login-modal-title">Login Required</div>
-    <div class="modal-desc"  id="login-modal-desc"></div>
+    <div class="modal-desc"  id="login-modal-desc">
+      The agent needs to log in to continue. Enter your credentials to proceed automatically, or take manual control of the browser.
+    </div>
+
+    <!-- Credential form -->
     <div class="cred-form" id="cred-form">
       <div>
-        <label class="cred-label">Email / Username</label>
-        <input class="cred-input" id="cred-email" type="text" placeholder="you@example.com" autocomplete="username"/>
+        <label class="cred-label" for="cred-email">Email / Username</label>
+        <input class="cred-input" id="cred-email" type="text"
+               placeholder="you@example.com" autocomplete="username"/>
       </div>
       <div>
-        <label class="cred-label">Password</label>
-        <input class="cred-input" id="cred-password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password"/>
+        <label class="cred-label" for="cred-password">Password</label>
+        <input class="cred-input" id="cred-password" type="password"
+               placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+               autocomplete="current-password"/>
       </div>
     </div>
+
     <div class="modal-actions" style="flex-direction:column;gap:8px;">
-      <button class="modal-btn allow" id="login-creds-btn">Fill credentials automatically</button>
+      <button class="modal-btn allow" id="login-creds-btn">
+        &#9654;&nbsp;Fill credentials automatically
+      </button>
       <div class="modal-divider">or</div>
-      <button class="modal-btn purple-btn" id="login-takeover-btn">Let me log in manually (take control)</button>
-      <button class="modal-btn" id="login-deny-btn">Skip this login</button>
+      <button class="modal-btn purple-btn" id="login-takeover-btn">
+        &#128432;&nbsp;Let me log in manually (take control)
+      </button>
+      <button class="modal-btn" id="login-deny-btn">
+        Skip this login
+      </button>
     </div>
   </div>
 </div>
+
 <script>
 (()=>{
 'use strict';
@@ -418,6 +527,8 @@ const $=id=>document.getElementById(id);
 let view='mission';
 let isRunning=false;
 let isTakeover=false;
+
+/* ── View switcher ── */
 function setView(v){
   view=v;
   $('btn-mission').classList.toggle('active',v==='mission');
@@ -429,6 +540,8 @@ function setView(v){
 }
 $('btn-mission').addEventListener('click',()=>setView('mission'));
 $('btn-result') .addEventListener('click',()=>setView('result'));
+
+/* ── Timeline icons ── */
 const ICONS={
   start:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
   think:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
@@ -447,6 +560,9 @@ const ICONS={
   cancelled:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
 };
 const defaultIcon=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/></svg>`;
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 function appendEntry(evt){
   if(evt.kind==='heartbeat'||evt.kind==='snapshot') return;
   const tl=$('timeline');
@@ -465,7 +581,7 @@ function appendEntry(evt){
   tl.appendChild(d);
   tl.scrollTop=tl.scrollHeight;
 }
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 function renderTasks(tasks){
   const tl=$('task-list');
   if(!tasks||tasks.length===0){
@@ -479,43 +595,63 @@ function renderTasks(tasks){
       <span style="flex:1;font-size:.74rem;color:var(--text-muted);line-height:1.4">${escHtml((t.goal||'').slice(0,60))}</span>
     </div>`).join('');
 }
+
 const STATUS_LABELS={
   idle:'Idle',thinking:'Thinking…',acting:'Acting',
   waiting_permission:'Needs Permission',waiting_login:'Login Required',
   waiting_login_takeover:'You Have Control',done:'Done',error:'Error',cancelled:'Cancelled',
 };
+
 function updateStatus(status,goal){
   const pill=$('status-pill');
   pill.className='status-pill '+(status||'idle');
   $('status-text').textContent=STATUS_LABELS[status]||status;
-  $('current-goal').textContent=goal||'';
+  if(goal!==null) $('current-goal').textContent=goal||'';
+
   const running=['thinking','acting','waiting_permission','waiting_login','waiting_login_takeover'].includes(status);
   isRunning=running;
+
+  // Blue glow bar
   $('progress-glow').classList.toggle('active',running);
-  $('running-overlay').classList.toggle('active',running&&!isTakeover);
-  $('send-btn').disabled=running;
-  $('inject-row').classList.toggle('visible',running);
-  if(!running) $('inject-input').value='';
+
+  // Stop bar (shown while running unless user has takeover)
   const takeover=status==='waiting_login_takeover';
   isTakeover=takeover;
+  $('stop-bar-wrap').classList.toggle('active',running&&!takeover);
+
+  // Interaction lock on content area
+  $('run-lock').classList.toggle('active',running&&!takeover);
+
+  // Send button disabled while running
+  $('send-btn').disabled=running;
+
+  // Mid-run inject row
+  $('inject-row').classList.toggle('visible',running);
+  if(!running) $('inject-input').value='';
+
+  // Takeover banner
   $('takeover-banner').classList.toggle('visible',takeover);
-  if(takeover) $('running-overlay').classList.remove('active');
+
   $('input-hint').textContent=running
-    ?'Add instructions below while the agent is running'
-    :'Press Enter to send \u00b7 Shift+Enter for new line';
+    ?'Add mid-run instructions below ↓'
+    :'Press Enter to send · Shift+Enter for new line';
 }
+
 function showResult(text){
   if(!text) return;
   $('result-body').textContent=text;
   $('result-panel').style.display='block';
   setView('result');
 }
+
+/* ── SSE ── */
 let sse;
 function connectSSE(){
   sse=new EventSource(API+'/api/events');
   sse.onmessage=e=>{
     let evt;
     try{evt=JSON.parse(e.data);}catch{return;}
+
     if(evt.kind==='snapshot'){
       const s=evt.state||{};
       updateStatus(s.status,s.goal);
@@ -528,10 +664,11 @@ function connectSSE(){
       }
       return;
     }
+
     appendEntry(evt);
     if(evt.kind==='plan'&&evt.tasks) renderTasks(evt.tasks.map(t=>({...t,status:'pending'})));
     if(evt.kind==='done'){
-      updateStatus('done',null);
+      updateStatus('done','');
       fetch(API+'/api/result').then(r=>r.json()).then(d=>showResult(d.result));
     }
     if(evt.kind==='error')    updateStatus('error',null);
@@ -547,15 +684,18 @@ function connectSSE(){
       showLoginModal(evt.site||evt.text);
       updateStatus('waiting_login',null);
     }
-    if(evt.kind==='login_takeover')   updateStatus('waiting_login_takeover',null);
-    if(evt.kind==='login_takeover_done') updateStatus('acting',null);
-    if(evt.kind==='login_creds_provided') updateStatus('acting',null);
+    if(evt.kind==='login_takeover')    updateStatus('waiting_login_takeover',null);
+    if(evt.kind==='login_takeover_done')updateStatus('acting',null);
+    if(evt.kind==='login_creds_provided')updateStatus('acting',null);
+
     fetch(API+'/api/status').then(r=>r.json())
-      .then(s=>{renderTasks(s.tasks);updateStatus(s.status,s.goal);}).catch(()=>{});
+      .then(s=>{renderTasks(s.tasks);}).catch(()=>{});
   };
   sse.onerror=()=>{setTimeout(connectSSE,2000);};
 }
 connectSSE();
+
+/* ── Permission modal ── */
 function showPermissionModal(desc,actionType){
   $('modal-title').textContent=`Allow ${(actionType||'action').toUpperCase()} access?`;
   $('modal-desc').textContent=desc;
@@ -570,38 +710,53 @@ async function respondPermission(approved){
 }
 $('modal-allow').addEventListener('click',()=>respondPermission(true));
 $('modal-deny') .addEventListener('click',()=>respondPermission(false));
+
+/* ── Login modal ── */
 function showLoginModal(site){
   $('login-modal-title').textContent=`Login required: ${site||'site'}`;
-  $('login-modal-desc').textContent='Enter credentials to log in automatically, take manual control, or skip.';
   $('cred-email').value='';
   $('cred-password').value='';
   $('login-modal').classList.add('visible');
 }
 function hideLoginModal(){$('login-modal').classList.remove('visible');}
+
 $('login-creds-btn').addEventListener('click',async()=>{
   const email=$('cred-email').value.trim();
   const pw=$('cred-password').value;
-  if(!email||!pw) return;
+  if(!email||!pw){
+    $('cred-email').style.borderColor='var(--red)';
+    $('cred-password').style.borderColor='var(--red)';
+    setTimeout(()=>{
+      $('cred-email').style.borderColor='';
+      $('cred-password').style.borderColor='';
+    },1400);
+    return;
+  }
   hideLoginModal();
   await fetch(API+'/api/login_creds',{method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({email,username:email,password:pw})});
 });
+
 $('login-takeover-btn').addEventListener('click',async()=>{
   hideLoginModal();
   await fetch(API+'/api/login_take_over',{method:'POST',
     headers:{'Content-Type':'application/json'},body:'{}'});
 });
+
 $('login-deny-btn').addEventListener('click',async()=>{
   hideLoginModal();
   await fetch(API+'/api/login_deny',{method:'POST'});
 });
+
 $('takeover-done-btn').addEventListener('click',async()=>{
   $('takeover-banner').classList.remove('visible');
   await fetch(API+'/api/login_take_over',{method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({done:true})});
 });
+
+/* ── Send goal ── */
 async function sendGoal(){
   const input=$('goal-input');
   const goal=input.value.trim();
@@ -621,6 +776,8 @@ $('send-btn').addEventListener('click',sendGoal);
 $('goal-input').addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendGoal();}
 });
+
+/* ── Mid-run inject ── */
 async function sendInject(){
   const input=$('inject-input');
   const text=input.value.trim();
@@ -634,9 +791,17 @@ $('inject-btn').addEventListener('click',sendInject);
 $('inject-input').addEventListener('keydown',e=>{
   if(e.key==='Enter'){e.preventDefault();sendInject();}
 });
+
+/* ── Stop ── */
 $('stop-btn').addEventListener('click',async()=>{
   await fetch(API+'/api/cancel',{method:'POST'});
+  updateStatus('idle','');
+  $('stop-bar-wrap').classList.remove('active');
+  $('progress-glow').classList.remove('active');
+  $('run-lock').classList.remove('active');
 });
+
+/* ── Suggestion chips ── */
 document.querySelectorAll('.suggestion-chip').forEach(btn=>{
   btn.addEventListener('click',()=>{$('goal-input').value=btn.dataset.goal;sendGoal();});
 });
