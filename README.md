@@ -1,3 +1,5 @@
+### THIS PROJECT IS DEPRECIATED AS OF NOW. NO UPDATES ARE PLANNED AND THIS IS AN INCOMPLETE REPO.
+
 # Locus
 
 Locus is a local Perplexity Computer / Codex-style workspace assistant for
