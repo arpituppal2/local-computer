@@ -267,14 +267,15 @@ def connector_status(plugin: Plugin) -> dict[str, Any]:
     cli = connector.get("cli")
     cli_path = shutil.which(str(cli)) if cli else None
 
-    configured = bool(present_env or cli_path or connector.get("browser_urls"))
+    browser_urls = [str(url) for url in connector.get("browser_urls", [])]
+    configured = bool(present_env or cli_path)
     detail_parts: list[str] = []
     if present_env:
         detail_parts.append("env configured: " + ", ".join(present_env))
     if cli_path:
         detail_parts.append(f"cli available: {cli}")
-    if connector.get("browser_urls"):
-        detail_parts.append("browser workflow available")
+    if browser_urls:
+        detail_parts.append("browser workflow available after explicit approval")
     if not detail_parts:
         detail_parts.append("credentials not configured")
 
@@ -283,6 +284,7 @@ def connector_status(plugin: Plugin) -> dict[str, Any]:
         "configured": configured,
         "env_present": present_env,
         "cli_available": bool(cli_path),
+        "browser_workflow_available": bool(browser_urls),
         "detail": "; ".join(detail_parts),
     }
 

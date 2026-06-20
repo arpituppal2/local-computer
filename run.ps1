@@ -13,20 +13,40 @@ $AidDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function Resolve-Python {
   if (Get-Command python -ErrorAction SilentlyContinue) {
-    return @{ Command = "python"; Args = @() }
+    try {
+      & python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" *> $null
+      if ($LASTEXITCODE -eq 0) {
+        return @{ Command = "python"; Args = @() }
+      }
+    } catch {}
   }
   if (Get-Command py -ErrorAction SilentlyContinue) {
-    return @{ Command = "py"; Args = @("-3") }
+    try {
+      & py -3 -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" *> $null
+      if ($LASTEXITCODE -eq 0) {
+        return @{ Command = "py"; Args = @("-3") }
+      }
+    } catch {}
   }
   $bootstrap = Join-Path $AidDir "scripts/bootstrap_python_windows.ps1"
   & powershell -NoProfile -ExecutionPolicy Bypass -File $bootstrap
   if (Get-Command python -ErrorAction SilentlyContinue) {
-    return @{ Command = "python"; Args = @() }
+    try {
+      & python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" *> $null
+      if ($LASTEXITCODE -eq 0) {
+        return @{ Command = "python"; Args = @() }
+      }
+    } catch {}
   }
   if (Get-Command py -ErrorAction SilentlyContinue) {
-    return @{ Command = "py"; Args = @("-3") }
+    try {
+      & py -3 -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" *> $null
+      if ($LASTEXITCODE -eq 0) {
+        return @{ Command = "py"; Args = @("-3") }
+      }
+    } catch {}
   }
-  throw "Python 3.11 or newer is required, and automatic installation did not make it available in this shell."
+  throw "Python 3.12 or newer is required, and automatic installation did not make it available in this shell."
 }
 
 function Use-Default {
@@ -43,7 +63,10 @@ $env:LOCAL_COMPUTER_ALLOW_MODELS = if ($AllowModels) { "1" } else { Use-Default 
 $env:LOCAL_COMPUTER_ALLOW_EXTERNAL_AI = if ($AllowExternalAi) { "1" } else { Use-Default $env:LOCAL_COMPUTER_ALLOW_EXTERNAL_AI "0" }
 $env:LOCAL_COMPUTER_ALLOW_CLOUD_WORKERS = if ($AllowCloudWorkers) { "1" } else { Use-Default $env:LOCAL_COMPUTER_ALLOW_CLOUD_WORKERS "0" }
 $env:LOCAL_COMPUTER_SKIP_MODEL_VALIDATE = Use-Default $env:LOCAL_COMPUTER_SKIP_MODEL_VALIDATE "1"
-$env:LOCAL_COMPUTER_MAX_GPU_PERCENT = Use-Default $env:LOCAL_COMPUTER_MAX_GPU_PERCENT "95"
+$env:LOCAL_COMPUTER_AUTO_INSTALL_MODELS = Use-Default $env:LOCAL_COMPUTER_AUTO_INSTALL_MODELS "0"
+$env:LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA = Use-Default $env:LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA "0"
+$env:LOCAL_COMPUTER_MAX_GPU_PERCENT = Use-Default $env:LOCAL_COMPUTER_MAX_GPU_PERCENT "90"
+$env:LOCAL_COMPUTER_HOST = Use-Default $env:LOCAL_COMPUTER_HOST "127.0.0.1"
 $env:TOKENIZERS_PARALLELISM = "false"
 if ($PSBoundParameters.ContainsKey("MaxRamGb")) {
   $env:LOCAL_COMPUTER_MAX_RAM_GB = [string]$MaxRamGb
@@ -51,6 +74,12 @@ if ($PSBoundParameters.ContainsKey("MaxRamGb")) {
 if ($NoAutoSelectModels) {
   $env:LOCAL_COMPUTER_AUTO_SELECT_MODELS = "0"
 }
+
+$portResult = & $Python.Command @($Python.Args) (Join-Path $AidDir "scripts/networking.py") --host $env:LOCAL_COMPUTER_HOST --preferred (Use-Default $env:LOCAL_COMPUTER_PORT "8765")
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($portResult)) {
+  throw "Could not find a free local dashboard port."
+}
+$env:LOCAL_COMPUTER_PORT = [string]($portResult | Select-Object -First 1)
 
 try {
   $budgetJson = & $Python.Command @($Python.Args) (Join-Path $AidDir "scripts/resource_policy.py") --json 2>$null
@@ -83,11 +112,6 @@ if ($env:LOCAL_COMPUTER_ALLOW_MODELS -eq "1") {
   $env:LOCAL_COMPUTER_ALLOW_MODELS = "0"
 }
 
-$portBusy = Get-NetTCPConnection -LocalPort 8765 -State Listen -ErrorAction SilentlyContinue
-if ($portBusy) {
-  throw "Port 8765 is already in use. Stop the existing Locus server and try again."
-}
-
 & $Python.Command @($Python.Args) (Join-Path $AidDir "scripts/setup_manager.py") --bootstrap
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
@@ -105,6 +129,6 @@ if ($Goal -and $Goal.Count -gt 0) {
     & $VenvPython "scripts/workspace_agent.py" @Goal
   }
 } else {
-  Write-Host "[run] Starting dashboard server at http://127.0.0.1:8765"
-  & $VenvPython "scripts/ui_server.py" --host 127.0.0.1 --port 8765
+  Write-Host "[run] Starting dashboard server at http://$($env:LOCAL_COMPUTER_HOST):$($env:LOCAL_COMPUTER_PORT)"
+  & $VenvPython "scripts/ui_server.py" --host $env:LOCAL_COMPUTER_HOST --port $env:LOCAL_COMPUTER_PORT
 }

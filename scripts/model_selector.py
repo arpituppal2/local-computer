@@ -36,7 +36,7 @@ def _gpu_acceleration(profile: HardwareProfile, budget: ResourceBudget) -> dict[
     primary = profile.primary_gpu
     primary_name = primary.name if primary else ""
     vram = profile.dedicated_vram_gb
-    gpu_limit = max(1.0, min(float(budget.gpu_limit_pct), 95.0)) / 100
+    gpu_limit = max(50.0, min(float(budget.gpu_limit_pct), 99.0)) / 100
 
     if profile.apple_silicon:
         unified_budget = max(1.0, min(budget.usable_for_models_gb, budget.max_ram_gb * gpu_limit))
@@ -205,7 +205,7 @@ def _fit_roles(
                 break
 
         if replacement is None:
-            replacement = "qwen3:0.6b" if role != "memory" else "qwen3-embedding:0.6b"
+            replacement = "qwen2.5:3b" if role != "memory" else "nomic-embed-text"
             warnings.append(f"No comfortable model fit for role '{role}'; using smallest fallback '{replacement}'.")
         else:
             warnings.append(f"Role '{role}' downgraded from '{desired}' to '{replacement}' to fit RAM budget.")
@@ -243,13 +243,17 @@ def _parallel_for_runtime(tier: dict[str, Any], budget: ResourceBudget, accelera
 
 
 def _timeout_for_model(model: str) -> int:
-    if model in {"nomic-embed-text", "qwen3-embedding:0.6b"}:
+    if model == "nomic-embed-text":
         return 45
     tag = model.rsplit(":", 1)[-1].lower()
-    if tag in {"0.6b", "1.7b", "4b"}:
+    if tag in {"0.6b", "1.7b", "3b", "4b"}:
         return 45
     if tag == "8b":
         return 90
+    if tag == "14b":
+        return 120
+    if tag == "70b":
+        return 420
     return 180
 
 
@@ -261,9 +265,9 @@ def _acceleration_warnings(profile: HardwareProfile, acceleration: dict[str, Any
         if vram is None:
             warnings.append("NVIDIA GPU detected, but VRAM could not be read; Locus is using conservative CUDA recommendations.")
         elif float(vram) < 10:
-            warnings.append("RTX laptop-class VRAM limits heavy local reasoning; Locus will favor 8B/4B models over 14B/32B models.")
+            warnings.append("RTX laptop-class VRAM limits heavy local reasoning; Locus will favor 3B/14B staged routing over 70B-class models.")
         elif tier in {"nvidia_desktop_12gb", "nvidia_desktop_16gb"}:
-            warnings.append("Desktop NVIDIA VRAM can run strong local models, but 32B-class models are reserved for very high VRAM or unified-memory systems.")
+            warnings.append("Desktop NVIDIA VRAM can run strong local models, but 70B-class models are reserved for very high VRAM or unified-memory systems.")
     elif acceleration.get("kind") == "windows_gpu":
         warnings.append("GPU acceleration is not confirmed as NVIDIA CUDA; recommendations remain conservative.")
     elif not profile.has_gpu:
@@ -390,7 +394,7 @@ def _print_human(recommendation: dict[str, Any]) -> None:
         adjusted = " pressure-adjusted" if budget.get("pressure_adjusted") else ""
         print(f"Available RAM now: {budget['available_ram_gb']:.1f} GB ({pressure}{adjusted})")
     cap_label = "GPU/MPS cap" if hardware.get("os_family") == "macos" else "GPU cap"
-    print(f"{cap_label}: {budget.get('gpu_limit_pct', 95):.0f}%")
+    print(f"{cap_label}: {budget.get('gpu_limit_pct', 90):.0f}%")
     if hardware.get("gpus"):
         print("GPU:", ", ".join(gpu["name"] for gpu in hardware["gpus"]))
     if acceleration:

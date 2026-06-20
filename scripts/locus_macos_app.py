@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import sys
+import os
 import time
 import webbrowser
 from pathlib import Path
 
 
-DASH_URL = "http://127.0.0.1:8765"
+HOST = os.getenv("LOCAL_COMPUTER_HOST", "127.0.0.1")
+PORT = int(os.getenv("LOCAL_COMPUTER_PORT", "8765"))
+DASH_URL = f"http://{HOST}:{PORT}"
 ROOT = Path(__file__).resolve().parent.parent
 
 

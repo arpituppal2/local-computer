@@ -1176,6 +1176,7 @@ IMPLEMENTED_TOOLS: dict[str, dict[str, Any]] = {
         "github_pr_context": github_pr_context,
     },
     "email": {"connector_status": connector_status, "draft_email": draft_email, "search_mail": search_mail},
+    "google_drive": {"connector_status": connector_status},
     "uploads": {"save_upload": save_upload, "list_uploads": list_uploads_tool, "read_upload": read_upload},
     "memory": {
         "connector_status": connector_status,
@@ -1406,7 +1407,7 @@ def render_tool_result(result: dict[str, Any]) -> str:
             f"- Tier: `{rec.get('tier', 'unknown')}`",
             f"- RAM: `{float(hardware.get('ram_gb') or 0):.1f} GB`",
             f"- Budget: max `{float(budget.get('max_ram_gb') or 0):.1f} GB`; usable `{float(budget.get('usable_for_models_gb') or 0):.1f} GB`",
-            f"- GPU cap: `{float(budget.get('gpu_limit_pct') or 95):.0f}%`",
+            f"- GPU cap: `{float(budget.get('gpu_limit_pct') or 90):.0f}%`",
             f"- Acceleration: `{acceleration.get('tier') or acceleration.get('kind') or 'unknown'}`",
             "",
             "| Role | Model |",

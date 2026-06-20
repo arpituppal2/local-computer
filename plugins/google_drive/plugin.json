@@ -1,0 +1,17 @@
+{
+  "id": "google_drive",
+  "name": "Google Drive",
+  "version": "0.1.0",
+  "description": "Google Drive connector stub for future local OAuth/API setup. Disabled from network use unless credentials and explicit approval are configured.",
+  "enabled": true,
+  "connector": {
+    "type": "google_drive",
+    "env": ["GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+    "browser_urls": ["https://drive.google.com", "https://docs.google.com"]
+  },
+  "keywords": ["google drive", "drive", "docs", "sheets", "slides", "files"],
+  "capabilities": ["connector_status"],
+  "tools": [
+    {"name": "connector_status", "risk": "read", "description": "Report Google Drive connector readiness without making network calls."}
+  ]
+}

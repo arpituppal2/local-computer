@@ -1,73 +1,72 @@
 {
-  "catalog_version": 2,
+  "catalog_version": 3,
   "notes": [
-    "Local macOS/Windows catalog; Windows NVIDIA recommendations are additionally constrained by detected VRAM.",
-    "Selector writes recommendations only; use --pull explicitly to download.",
-    "8 GB machines default to tiny models, low context, one loaded model, and plugin-first routing."
+    "Local-only Ollama catalog for macOS Apple Silicon and Windows GPU/CPU machines.",
+    "Selector writes recommendations and pull commands only; it does not download or run models unless --pull is used.",
+    "Intelligence tiers map to more planning/tool loops and higher local compute, with warnings when a model exceeds the comfortable RAM budget."
   ],
   "models": {
-    "qwen3:0.6b": {
-      "family": "qwen3",
-      "approx_size_gb": 0.52,
-      "runtime_ram_gb": 1.2,
-      "runtime_vram_gb": 0.8,
-      "min_ram_gb": 4,
-      "roles": ["router", "executor", "orchestrator"],
-      "notes": "Smallest first-party Qwen3 Ollama tag; suitable for 8 GB Macs with low context."
+    "qwen2.5:3b": {
+      "family": "qwen2.5",
+      "approx_size_gb": 2.0,
+      "runtime_ram_gb": 3.0,
+      "runtime_vram_gb": 2.4,
+      "min_ram_gb": 8,
+      "roles": [
+        "router",
+        "navigator",
+        "executor",
+        "critic",
+        "planner",
+        "synthesizer",
+        "orchestrator"
+      ],
+      "notes": "Fast xlow/low local model for 8 GB machines, voice routing, and lightweight app control."
     },
-    "qwen3:1.7b": {
-      "family": "qwen3",
-      "approx_size_gb": 1.4,
-      "runtime_ram_gb": 2.4,
-      "runtime_vram_gb": 1.7,
-      "min_ram_gb": 6,
-      "roles": ["router", "navigator", "executor", "critic", "planner", "synthesizer", "orchestrator"],
-      "notes": "Default 8 GB local text model when max RAM budget allows it."
-    },
-    "qwen3:4b": {
-      "family": "qwen3",
-      "approx_size_gb": 2.5,
-      "runtime_ram_gb": 4.6,
-      "runtime_vram_gb": 3.2,
-      "min_ram_gb": 12,
-      "roles": ["router", "navigator", "executor", "critic", "planner", "synthesizer", "orchestrator"],
-      "notes": "Fast local control/planning model for 12-16 GB+ Macs."
-    },
-    "qwen3:8b": {
-      "family": "qwen3",
-      "approx_size_gb": 5.2,
-      "runtime_ram_gb": 8.2,
-      "runtime_vram_gb": 5.8,
+    "qwen2.5:14b": {
+      "family": "qwen2.5",
+      "approx_size_gb": 8.7,
+      "runtime_ram_gb": 7.6,
+      "runtime_vram_gb": 7.2,
       "min_ram_gb": 16,
-      "roles": ["planner", "synthesizer", "orchestrator", "critic", "heavy"],
-      "notes": "Default 16 GB planner/synthesizer only when RAM budget allows."
+      "roles": [
+        "planner",
+        "synthesizer",
+        "orchestrator",
+        "critic",
+        "heavy",
+        "router",
+        "navigator",
+        "executor"
+      ],
+      "notes": "Balanced medium/high model for browsing, uploads, artifact generation, and coding on 16 GB+ machines."
     },
-    "qwen3:14b": {
-      "family": "qwen3",
-      "approx_size_gb": 9.3,
-      "runtime_ram_gb": 13.5,
-      "runtime_vram_gb": 10.0,
-      "min_ram_gb": 24,
-      "roles": ["planner", "synthesizer", "orchestrator", "critic", "heavy"],
-      "notes": "Optional heavy reasoning model for 24 GB+ Macs."
-    },
-    "qwen3:32b": {
-      "family": "qwen3",
-      "approx_size_gb": 20.0,
-      "runtime_ram_gb": 28.0,
-      "runtime_vram_gb": 22.0,
+    "llama3.1:70b": {
+      "family": "llama3.1",
+      "approx_size_gb": 42.0,
+      "runtime_ram_gb": 39.0,
+      "runtime_vram_gb": 36.0,
       "min_ram_gb": 48,
-      "roles": ["planner", "synthesizer", "orchestrator", "heavy"],
-      "notes": "Large local reasoning model for high-memory workstations."
+      "roles": [
+        "planner",
+        "synthesizer",
+        "orchestrator",
+        "critic",
+        "heavy",
+        "council"
+      ],
+      "notes": "xhigh/max deep-chain model for high-memory Macs and workstations; expect long latency below 64 GB."
     },
-    "qwen3-embedding:0.6b": {
-      "family": "embedding",
-      "approx_size_gb": 0.64,
-      "runtime_ram_gb": 1.2,
-      "runtime_vram_gb": 0.9,
-      "min_ram_gb": 6,
-      "roles": ["memory"],
-      "notes": "Low-memory embedding option."
+    "llama3.1:405b": {
+      "family": "llama3.1",
+      "approx_size_gb": 230.0,
+      "runtime_ram_gb": 220.0,
+      "runtime_vram_gb": 200.0,
+      "min_ram_gb": 256,
+      "roles": [
+        "override_only"
+      ],
+      "notes": "Override-only warning target; not recommended by default on consumer machines."
     },
     "nomic-embed-text": {
       "family": "embedding",
@@ -75,139 +74,180 @@
       "runtime_ram_gb": 0.8,
       "runtime_vram_gb": 0.6,
       "min_ram_gb": 8,
-      "roles": ["memory"],
-      "notes": "Small local embedding model for long-term memory."
+      "roles": [
+        "memory"
+      ],
+      "notes": "Small local embedding model for persistent SQLite memory."
     }
+  },
+  "intelligence_tiers": [
+    {
+      "id": "xlow",
+      "label": "xlow",
+      "compute_style": "Fast routing",
+      "default_model": "qwen2.5:3b",
+      "ram_min_gb": 8,
+      "features": [
+        "basic chat",
+        "voice routing"
+      ]
+    },
+    {
+      "id": "low",
+      "label": "low",
+      "compute_style": "Fast routing",
+      "default_model": "qwen2.5:3b",
+      "ram_min_gb": 8,
+      "features": [
+        "basic chat",
+        "learn step-by-step"
+      ]
+    },
+    {
+      "id": "medium",
+      "label": "medium",
+      "compute_style": "Balanced",
+      "default_model": "qwen2.5:14b",
+      "ram_min_gb": 16,
+      "features": [
+        "browser control",
+        "uploads",
+        "artifact generation"
+      ]
+    },
+    {
+      "id": "high",
+      "label": "high",
+      "compute_style": "Balanced",
+      "default_model": "qwen2.5:14b",
+      "ram_min_gb": 16,
+      "features": [
+        "research browsing",
+        "coding loops",
+        "filesystem tools"
+      ]
+    },
+    {
+      "id": "xhigh",
+      "label": "xhigh",
+      "compute_style": "Deep chains",
+      "default_model": "llama3.1:70b",
+      "ram_min_gb": 48,
+      "features": [
+        "deep research",
+        "long coding loops"
+      ]
+    },
+    {
+      "id": "max",
+      "label": "max",
+      "compute_style": "Deep chains",
+      "default_model": "llama3.1:70b",
+      "ram_min_gb": 48,
+      "features": [
+        "model council",
+        "deep research",
+        "full local autonomy"
+      ]
+    }
+  ],
+  "feature_min_intelligence": {
+    "voice": "low",
+    "learn_step_by_step": "low",
+    "browser_control": "medium",
+    "uploads": "medium",
+    "artifact_generation": "medium",
+    "deep_research": "xhigh",
+    "model_council": "max"
   },
   "tiers": [
     {
-      "id": "m_air_8gb_safe",
+      "id": "m_air_8gb_xlow",
       "min_ram_gb": 0,
-      "max_ram_gb": 8.9,
+      "max_ram_gb": 15.9,
       "max_model_ram_gb": 4.8,
       "roles": {
-        "orchestrator": "qwen3:1.7b",
-        "planner": "qwen3:1.7b",
-        "navigator": "qwen3:0.6b",
-        "executor": "qwen3:0.6b",
-        "synthesizer": "qwen3:1.7b",
-        "critic": "qwen3:0.6b",
-        "router": "qwen3:0.6b",
-        "memory": "qwen3-embedding:0.6b"
+        "orchestrator": "qwen2.5:3b",
+        "planner": "qwen2.5:3b",
+        "navigator": "qwen2.5:3b",
+        "executor": "qwen2.5:3b",
+        "synthesizer": "qwen2.5:3b",
+        "critic": "qwen2.5:3b",
+        "router": "qwen2.5:3b",
+        "memory": "nomic-embed-text"
       },
       "chatbot_threshold": 5,
       "max_local_parallel": 1,
       "num_ctx": 2048,
       "keep_alive": "1m",
-      "notes": "M1/M2 MacBook Air 8 GB: plugin-first, tiny local model, very low context."
+      "notes": "8-16 GB safe default: xlow/low routing with qwen2.5:3b; warn before medium features."
     },
     {
-      "id": "m_12gb_safe",
-      "min_ram_gb": 9,
-      "max_ram_gb": 13.9,
-      "max_model_ram_gb": 6.6,
+      "id": "m_16gb_medium",
+      "min_ram_gb": 16,
+      "max_ram_gb": 31.9,
+      "max_model_ram_gb": 10.0,
       "roles": {
-        "orchestrator": "qwen3:4b",
-        "planner": "qwen3:4b",
-        "navigator": "qwen3:1.7b",
-        "executor": "qwen3:1.7b",
-        "synthesizer": "qwen3:4b",
-        "critic": "qwen3:1.7b",
-        "router": "qwen3:1.7b",
-        "memory": "qwen3-embedding:0.6b"
-      },
-      "chatbot_threshold": 6,
-      "max_local_parallel": 1,
-      "num_ctx": 3072,
-      "keep_alive": "3m",
-      "notes": "For 12 GB unified memory or user-capped 16 GB machines."
-    },
-    {
-      "id": "m_16gb_balanced",
-      "min_ram_gb": 14,
-      "max_ram_gb": 20.9,
-      "max_model_ram_gb": 9.8,
-      "roles": {
-        "orchestrator": "qwen3:8b",
-        "planner": "qwen3:8b",
-        "navigator": "qwen3:4b",
-        "executor": "qwen3:4b",
-        "synthesizer": "qwen3:8b",
-        "critic": "qwen3:4b",
-        "router": "qwen3:4b",
+        "orchestrator": "qwen2.5:14b",
+        "planner": "qwen2.5:14b",
+        "navigator": "qwen2.5:3b",
+        "executor": "qwen2.5:3b",
+        "synthesizer": "qwen2.5:14b",
+        "critic": "qwen2.5:3b",
+        "router": "qwen2.5:3b",
+        "heavy": "qwen2.5:14b",
         "memory": "nomic-embed-text"
       },
       "chatbot_threshold": 7,
       "max_local_parallel": 1,
       "num_ctx": 4096,
       "keep_alive": "5m",
-      "notes": "16 GB MacBook Pro/Air: one local job; 8B only for planner/synthesis."
+      "notes": "16-32 GB balanced default: medium/high with qwen2.5:14b for planning and synthesis."
     },
     {
-      "id": "m_24gb_balanced",
-      "min_ram_gb": 21,
-      "max_ram_gb": 28.9,
-      "max_model_ram_gb": 14.5,
+      "id": "m_32gb_high",
+      "min_ram_gb": 32,
+      "max_ram_gb": 47.9,
+      "max_model_ram_gb": 18.0,
       "roles": {
-        "orchestrator": "qwen3:8b",
-        "planner": "qwen3:8b",
-        "navigator": "qwen3:4b",
-        "executor": "qwen3:4b",
-        "synthesizer": "qwen3:8b",
-        "critic": "qwen3:4b",
-        "router": "qwen3:4b",
-        "heavy": "qwen3:14b",
+        "orchestrator": "qwen2.5:14b",
+        "planner": "qwen2.5:14b",
+        "navigator": "qwen2.5:14b",
+        "executor": "qwen2.5:3b",
+        "synthesizer": "qwen2.5:14b",
+        "critic": "qwen2.5:14b",
+        "router": "qwen2.5:3b",
+        "heavy": "qwen2.5:14b",
         "memory": "nomic-embed-text"
       },
       "chatbot_threshold": 8,
-      "max_local_parallel": 1,
-      "num_ctx": 8192,
-      "keep_alive": "10m",
-      "notes": "24 GB Macs can use 14B selectively, but should still avoid parallel heavy jobs."
-    },
-    {
-      "id": "m_32gb_pro",
-      "min_ram_gb": 29,
-      "max_ram_gb": 44.9,
-      "max_model_ram_gb": 20,
-      "roles": {
-        "orchestrator": "qwen3:14b",
-        "planner": "qwen3:8b",
-        "navigator": "qwen3:4b",
-        "executor": "qwen3:4b",
-        "synthesizer": "qwen3:14b",
-        "critic": "qwen3:4b",
-        "router": "qwen3:4b",
-        "heavy": "qwen3:14b",
-        "memory": "nomic-embed-text"
-      },
-      "chatbot_threshold": 9,
       "max_local_parallel": 2,
       "num_ctx": 8192,
-      "keep_alive": "15m",
-      "notes": "32 GB pro/workstation class: moderate local concurrency, with 14B only when RAM and VRAM allow."
+      "keep_alive": "10m",
+      "notes": "32 GB high tier: full browser/coding loops with 14B, model council remains locked to max-class hardware."
     },
     {
-      "id": "m_48gb_workstation",
-      "min_ram_gb": 45,
+      "id": "m_48gb_max",
+      "min_ram_gb": 48,
       "max_ram_gb": 999,
-      "max_model_ram_gb": 32,
+      "max_model_ram_gb": 44.0,
       "roles": {
-        "orchestrator": "qwen3:14b",
-        "planner": "qwen3:14b",
-        "navigator": "qwen3:8b",
-        "executor": "qwen3:4b",
-        "synthesizer": "qwen3:14b",
-        "critic": "qwen3:8b",
-        "router": "qwen3:4b",
-        "heavy": "qwen3:32b",
+        "orchestrator": "llama3.1:70b",
+        "planner": "qwen2.5:14b",
+        "navigator": "qwen2.5:14b",
+        "executor": "qwen2.5:3b",
+        "synthesizer": "llama3.1:70b",
+        "critic": "qwen2.5:14b",
+        "router": "qwen2.5:3b",
+        "heavy": "llama3.1:70b",
+        "council": "llama3.1:70b",
         "memory": "nomic-embed-text"
       },
       "chatbot_threshold": 9,
       "max_local_parallel": 2,
       "num_ctx": 16384,
       "keep_alive": "20m",
-      "notes": "48 GB+ workstation tier; 32B heavy reasoning only when the GPU/unified-memory budget allows it."
+      "notes": "48 GB+ max tier: deep research and model council with llama3.1:70b when RAM pressure allows."
     }
   ]
 }

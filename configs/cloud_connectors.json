@@ -1,0 +1,38 @@
+{
+  "privacy": {
+    "default_network_access": false,
+    "telemetry": false,
+    "note": "These are connector setup stubs only. Locus does not call cloud APIs unless the user configures credentials and approves a network tool."
+  },
+  "connectors": {
+    "github": {
+      "kind": "oauth_or_token",
+      "env": ["GITHUB_TOKEN", "GH_TOKEN"],
+      "local_cli": "gh",
+      "scopes": ["repo", "read:org", "workflow"],
+      "status": "available_when_configured"
+    },
+    "google_drive": {
+      "kind": "oauth",
+      "env": ["GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+      "scopes": [
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/documents",
+        "https://www.googleapis.com/auth/spreadsheets.readonly"
+      ],
+      "status": "stub"
+    },
+    "gmail": {
+      "kind": "oauth_or_browser_session",
+      "env": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "LOCAL_COMPUTER_EMAIL"],
+      "scopes": ["https://www.googleapis.com/auth/gmail.modify"],
+      "status": "stub"
+    },
+    "outlook": {
+      "kind": "oauth_or_browser_session",
+      "env": ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET", "LOCAL_COMPUTER_EMAIL"],
+      "scopes": ["Mail.ReadWrite", "Mail.Send", "Files.ReadWrite"],
+      "status": "stub"
+    }
+  }
+}

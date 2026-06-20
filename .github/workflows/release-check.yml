@@ -1,0 +1,33 @@
+name: Release Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  no-model-release-check:
+    name: No-model release check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    env:
+      LOCAL_COMPUTER_ALLOW_MODELS: "0"
+      LOCAL_COMPUTER_SKIP_MODEL_VALIDATE: "1"
+      LOCAL_COMPUTER_AUTO_INSTALL_MODELS: "0"
+      LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA: "0"
+      LOCAL_COMPUTER_ALLOW_EXTERNAL_AI: "0"
+      LOCAL_COMPUTER_ALLOW_CLOUD_WORKERS: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m playwright install chromium
+      - name: Run release gate
+        run: python scripts/release_check.py

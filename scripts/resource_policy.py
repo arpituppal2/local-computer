@@ -90,6 +90,8 @@ def default_max_ram_gb(profile: HardwareProfile) -> float:
         return 17.0
     if ram <= 32.5:
         return 20.0
+    if ram >= 48:
+        return max(36.0, ram * 0.76)
     return max(24.0, ram * 0.62)
 
 
@@ -220,9 +222,12 @@ def resource_budget(
         warnings.append("8 GB RAM requires tiny models, low context, one local job, and aggressive fallbacks.")
     if max_ram < default_budget * 0.75:
         warnings.append("Configured RAM cap is below the recommended budget for this machine.")
-    warnings.append("For best results, it is highly recommended not to use other apps while Locus is running.")
-
     gpu_limit = max_gpu_percent()
+    if gpu_limit < 75:
+        warnings.append("Compute cap below 75% may make local models and browser-control loops noticeably slower.")
+    elif gpu_limit > 90:
+        warnings.append("Compute cap above 90% can cause heat, fan noise, and system instability on long local runs.")
+    warnings.append("For best results, it is highly recommended not to use other apps while Locus is running.")
 
     env = {
         "OLLAMA_NUM_PARALLEL": "1",

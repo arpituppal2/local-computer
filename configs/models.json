@@ -1,18 +1,18 @@
 {
-  "orchestrator": "qwen3:8b",
-  "planner": "qwen3:8b",
-  "navigator": "qwen3:4b",
-  "executor": "qwen3:4b",
-  "synthesizer": "qwen3:8b",
-  "critic": "qwen3:4b",
+  "orchestrator": "qwen2.5:14b",
+  "planner": "qwen2.5:14b",
+  "navigator": "qwen2.5:3b",
+  "executor": "qwen2.5:3b",
+  "synthesizer": "qwen2.5:14b",
+  "critic": "qwen2.5:3b",
   "memory": "nomic-embed-text",
-  "router": "qwen3:4b",
+  "router": "qwen2.5:3b",
   "ollama_host": "http://localhost:11434",
   "chatbot_threshold": 8,
-  "max_local_parallel": 2,
+  "max_local_parallel": 1,
   "timeouts": {
-    "qwen3:4b": 45,
-    "qwen3:8b": 90,
+    "qwen2.5:3b": 45,
+    "qwen2.5:14b": 120,
     "nomic-embed-text": 45
   }
 }

@@ -10,16 +10,16 @@
       --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
       --font-display: ui-serif, "New York", "Iowan Old Style", Georgia, serif;
       --font-mono: "SF Mono", Menlo, Monaco, Consolas, monospace;
-      --color-bg: #0f1110;
-      --color-surface: #20231f;
-      --color-surface-2: #31362f;
+      --color-bg: #020308;
+      --color-surface: #0b1019;
+      --color-surface-2: #111a27;
       --color-border: rgba(255, 255, 255, 0.18);
-      --color-text: #f7f7f2;
-      --color-muted: #b8bbb3;
-      --color-primary: #77d7cf;
-      --color-primary-2: #edf6ef;
-      --color-accent: #f5c783;
-      --color-ambient: rgba(150, 177, 162, 0.32);
+      --color-text: #f8fbff;
+      --color-muted: #aeb9c8;
+      --color-primary: #2774AE;
+      --color-primary-2: #8fc8ff;
+      --color-accent: #FFB81C;
+      --color-ambient: rgba(39, 116, 174, 0.32);
       --color-success: #93d6a0;
       --color-warning: #f6ca86;
       --color-error: #ee8e84;
@@ -28,16 +28,16 @@
     }
 
     [data-theme="light"] {
-      --color-bg: #f3f1ea;
-      --color-surface: #fdfcf8;
-      --color-surface-2: #e7e6df;
+      --color-bg: #f5f8fb;
+      --color-surface: #ffffff;
+      --color-surface-2: #e7eef6;
       --color-border: rgba(22, 24, 22, 0.14);
-      --color-text: #171916;
-      --color-muted: #6f746d;
-      --color-primary: #2d8580;
-      --color-primary-2: #29322d;
-      --color-accent: #af7a38;
-      --color-ambient: rgba(113, 130, 116, 0.22);
+      --color-text: #08111d;
+      --color-muted: #536475;
+      --color-primary: #2774AE;
+      --color-primary-2: #0f3f66;
+      --color-accent: #B67800;
+      --color-ambient: rgba(39, 116, 174, 0.18);
       --color-success: #3f8d52;
       --color-warning: #a97228;
       --color-error: #b9574e;
@@ -175,6 +175,19 @@
       stroke: color-mix(in srgb, var(--color-accent) 60%, var(--color-primary-2));
       stroke-width: 1.35;
       opacity: 0.76;
+    }
+
+    .brand-icon {
+      width: 31px;
+      height: 31px;
+      flex: 0 0 auto;
+      border-radius: 8px;
+      object-fit: cover;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.18),
+        0 0 16px rgba(39, 116, 174, 0.48),
+        0 0 28px rgba(255, 184, 28, 0.24);
+      animation: locusIconBreathe 4.2s ease-in-out infinite;
     }
 
     .header-actions {
@@ -321,6 +334,74 @@
     }
 
     .memory-chip:hover { border-color: var(--color-primary); }
+
+    .conversation-summary {
+      margin: 0 12px 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      background: color-mix(in srgb, var(--color-surface-2) 82%, transparent);
+      border-radius: var(--radius-sm);
+      color: var(--color-muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .conversation-list {
+      padding: 0 12px 12px;
+      display: grid;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .conversation-chip {
+      border: 1px solid var(--color-border);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 88%, white 4%), var(--color-surface-2));
+      color: var(--color-text);
+      border-radius: var(--radius-sm);
+      padding: 10px 11px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 120ms ease, transform 120ms ease;
+    }
+
+    .conversation-chip:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-1px);
+    }
+
+    .conversation-title {
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .conversation-meta {
+      margin-top: 4px;
+      color: var(--color-muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 6px;
+      padding: 3px 7px;
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      color: var(--color-muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .thinking-line.compressed span:last-child {
+      color: var(--color-muted);
+      font-style: italic;
+    }
 
     .main {
       display: grid;
@@ -708,6 +789,53 @@
       color: var(--color-text);
     }
 
+    .shortcut-rehearsal {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .shortcut-rehearsal-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      padding: 11px 13px;
+      border: 1px solid color-mix(in srgb, var(--color-primary) 34%, transparent);
+      border-radius: 16px;
+      color: color-mix(in srgb, var(--color-text) 76%, var(--color-muted));
+      background:
+        linear-gradient(180deg, color-mix(in srgb, white 8%, transparent), color-mix(in srgb, white 2%, transparent)),
+        color-mix(in srgb, var(--color-surface) 42%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+      font-size: 12px;
+    }
+
+    .shortcut-rehearsal-card.done {
+      border-color: color-mix(in srgb, var(--color-success) 72%, white);
+      color: var(--color-text);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
+        0 0 28px color-mix(in srgb, var(--color-primary) 18%, transparent);
+    }
+
+    .shortcut-key {
+      flex: 0 0 auto;
+      min-width: 54px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      text-align: center;
+      color: #07111c;
+      background: linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--color-primary-2) 18%, #ffffff));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        0 10px 20px rgba(0, 0, 0, 0.2);
+      font-weight: 800;
+    }
+
     .setup-run {
       border: 1px solid color-mix(in srgb, var(--color-primary-2) 42%, transparent);
       background:
@@ -855,6 +983,15 @@
 
     .setup-actions.show { display: flex; }
 
+    #modelDownloadActions {
+      align-items: center;
+    }
+
+    #modelDownloadEstimate {
+      flex: 1 1 280px;
+      min-width: 240px;
+    }
+
     .setup-secondary {
       border: 1px solid color-mix(in srgb, var(--color-primary) 34%, transparent);
       background:
@@ -927,6 +1064,23 @@
         filter:
           drop-shadow(0 0 14px color-mix(in srgb, var(--color-primary) 62%, transparent))
           drop-shadow(0 0 30px color-mix(in srgb, var(--color-primary-2) 34%, transparent));
+      }
+    }
+
+    @keyframes locusIconBreathe {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.18),
+          0 0 16px rgba(39, 116, 174, 0.42),
+          0 0 28px rgba(255, 184, 28, 0.2);
+      }
+      50% {
+        transform: translateY(-1px) scale(1.035);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.24),
+          0 0 24px rgba(39, 116, 174, 0.72),
+          0 0 42px rgba(255, 184, 28, 0.34);
       }
     }
 
@@ -1553,6 +1707,43 @@
       line-height: 1.35;
     }
 
+    .usage-control,
+    .feature-gates {
+      display: grid;
+      gap: 8px;
+    }
+
+    .usage-row,
+    .feature-gate-row {
+      justify-content: space-between;
+      padding: 9px 10px;
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-surface-2) 64%, transparent);
+      color: var(--color-muted);
+      font-size: 12px;
+    }
+
+    .usage-row strong,
+    .feature-gate-row strong {
+      color: var(--color-text);
+      font-weight: 760;
+    }
+
+    .usage-row .range-slider {
+      flex: 1 1 180px;
+      min-width: 160px;
+    }
+
+    .feature-gate-row .gate-tag {
+      flex: 0 0 auto;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: #07111c;
+      background: linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--color-accent) 28%, #ffffff));
+      font-weight: 780;
+    }
+
     .risk-row {
       display: grid;
       grid-template-columns: 150px 1fr auto;
@@ -1714,6 +1905,196 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .control-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 68;
+      display: none;
+      overflow: hidden;
+      pointer-events: none;
+      color: #f6fbf3;
+      background:
+        radial-gradient(circle at var(--cursor-x, 52%) var(--cursor-y, 50%), rgba(143, 200, 255, 0.28), transparent 13%),
+        radial-gradient(circle at 50% 50%, rgba(39, 116, 174, 0.18), transparent 34%),
+        linear-gradient(135deg, rgba(2, 3, 8, 0.24), rgba(7, 17, 28, 0.46));
+      backdrop-filter: blur(12px) saturate(142%);
+      -webkit-backdrop-filter: blur(12px) saturate(142%);
+    }
+
+    .control-veil.show {
+      display: block;
+      animation: controlVeilIn 180ms ease both;
+    }
+
+    .control-veil::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border-radius: 30px;
+      border: 1px solid rgba(238, 248, 240, 0.24);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 0 90px rgba(39, 116, 174, 0.22),
+        0 0 88px rgba(143, 200, 255, 0.32);
+      animation: controlAura 1700ms ease-in-out infinite;
+    }
+
+    .control-veil::after {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      background:
+        linear-gradient(112deg, transparent 24%, rgba(255, 255, 255, 0.12) 45%, transparent 62%),
+        radial-gradient(circle at 72% 22%, rgba(255, 184, 28, 0.18), transparent 18%);
+      opacity: 0.58;
+      transform: translateX(-24%);
+      animation: controlSweep 3600ms ease-in-out infinite;
+    }
+
+    .control-frame {
+      position: absolute;
+      inset: 22px;
+      border-radius: 34px;
+      border: 1px solid rgba(244, 250, 244, 0.2);
+      box-shadow:
+        inset 0 0 48px rgba(255, 255, 255, 0.08),
+        inset 0 -34px 80px rgba(0, 0, 0, 0.14);
+    }
+
+    .control-status {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 22px);
+      left: 50%;
+      z-index: 2;
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 12px;
+      width: min(520px, calc(100vw - 42px));
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        rgba(7, 17, 28, 0.68);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 18px 70px rgba(0, 0, 0, 0.32),
+        0 0 46px rgba(143, 200, 255, 0.24);
+      backdrop-filter: blur(24px) saturate(145%);
+      -webkit-backdrop-filter: blur(24px) saturate(145%);
+    }
+
+    .control-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 99px;
+      background: #8fc8ff;
+      box-shadow: 0 0 0 8px rgba(143, 200, 255, 0.13), 0 0 22px rgba(143, 200, 255, 0.82);
+      animation: controlDot 980ms ease-in-out infinite;
+    }
+
+    .control-status strong,
+    .control-status small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      letter-spacing: 0;
+    }
+
+    .control-status strong {
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .control-status small {
+      margin-top: 2px;
+      color: rgba(246, 251, 243, 0.66);
+      font-size: 11px;
+      font-weight: 540;
+    }
+
+    .control-cursor {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 3;
+      width: 40px;
+      height: 40px;
+      transform: translate3d(var(--cursor-x, 50vw), var(--cursor-y, 50vh), 0);
+      transition: transform 120ms linear;
+      filter:
+        drop-shadow(0 6px 10px rgba(0, 0, 0, 0.38))
+        drop-shadow(0 0 18px rgba(239, 249, 239, 0.45));
+    }
+
+    .control-cursor svg {
+      width: 40px;
+      height: 40px;
+      fill: rgba(248, 252, 247, 0.94);
+      stroke: rgba(27, 31, 27, 0.86);
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .control-trail span {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 2;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(238, 248, 240, 0.74);
+      box-shadow: 0 0 18px rgba(143, 200, 255, 0.5);
+      transform: translate3d(var(--cursor-x, 50vw), var(--cursor-y, 50vh), 0);
+      opacity: 0;
+      transition: transform 170ms linear, opacity 170ms ease;
+    }
+
+    .control-click {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 1;
+      width: 70px;
+      height: 70px;
+      margin: -35px 0 0 -35px;
+      border-radius: 50%;
+      border: 1px solid rgba(248, 252, 247, 0.72);
+      background: radial-gradient(circle, rgba(255, 184, 28, 0.34), rgba(143, 200, 255, 0.18) 42%, transparent 62%);
+      box-shadow: 0 0 38px rgba(255, 184, 28, 0.32);
+      animation: controlClick 620ms ease-out forwards;
+    }
+
+    @keyframes controlVeilIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes controlAura {
+      0%, 100% { opacity: 0.62; transform: scale(1); }
+      50% { opacity: 0.95; transform: scale(0.992); }
+    }
+
+    @keyframes controlSweep {
+      0%, 100% { transform: translateX(-24%) rotate(0deg); opacity: 0.28; }
+      50% { transform: translateX(18%) rotate(2deg); opacity: 0.62; }
+    }
+
+    @keyframes controlDot {
+      0%, 100% { transform: scale(0.92); opacity: 0.74; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+
+    @keyframes controlClick {
+      0% { opacity: 0.86; transform: scale(0.26); }
+      100% { opacity: 0; transform: scale(1.36); }
     }
 
     .answer {
@@ -1920,6 +2301,63 @@
       padding: 8px 9px;
       font-size: 12px;
       outline: none;
+    }
+
+    .compute-form {
+      margin: -4px 12px 14px;
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+        rgba(255, 255, 255, 0.035);
+    }
+
+    .compute-form-head,
+    .intelligence-strip,
+    .usage-row,
+    .feature-gate-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .compute-form-head {
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--color-muted);
+    }
+
+    .compute-form-head strong,
+    .intelligence-label {
+      color: var(--color-accent);
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .range-slider {
+      width: 100%;
+      accent-color: var(--color-accent);
+    }
+
+    .compute-warning,
+    .intelligence-warning {
+      color: var(--color-muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .compute-warning.warning,
+    .intelligence-warning.warning {
+      color: var(--color-warning);
+    }
+
+    .compute-warning.error,
+    .intelligence-warning.error {
+      color: var(--color-error);
     }
 
     .upload-btn,
@@ -2404,7 +2842,7 @@
 
     .query-row {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto auto auto auto;
+      grid-template-columns: auto minmax(0, 1fr) auto auto auto auto auto;
       gap: 10px;
       align-items: center;
       min-height: 70px;
@@ -2425,6 +2863,16 @@
       display: grid;
       place-items: center;
       color: #171916;
+    }
+
+    .prompt-glyph img {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      object-fit: cover;
+      box-shadow:
+        0 0 0 1px rgba(10, 18, 30, 0.12),
+        0 0 20px rgba(39, 116, 174, 0.22);
     }
 
     .query-input {
@@ -2464,6 +2912,42 @@
       justify-content: center;
       gap: 12px;
       padding: 16px 0 6px;
+    }
+
+    .intelligence-strip {
+      margin: 4px auto 0;
+      width: min(620px, 100%);
+      padding: 9px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.025)),
+        rgba(0, 0, 0, 0.12);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 14px 32px rgba(0, 0, 0, 0.16);
+    }
+
+    .intelligence-title {
+      color: rgba(248, 251, 255, 0.72);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .intelligence-strip .range-slider {
+      flex: 1 1 170px;
+      min-width: 120px;
+    }
+
+    .intelligence-warning {
+      flex: 1.2 1 160px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
     }
 
     .task-tool {
@@ -2651,8 +3135,11 @@
       width: 56px;
       height: 56px;
       margin: 0 auto 18px;
-      color: rgba(247, 247, 242, 0.92);
-      filter: drop-shadow(0 0 26px rgba(237, 246, 239, 0.34));
+      border-radius: 14px;
+      object-fit: cover;
+      filter:
+        drop-shadow(0 0 26px rgba(39, 116, 174, 0.46))
+        drop-shadow(0 0 34px rgba(255, 184, 28, 0.24));
     }
 
     .launch-title {
@@ -3271,9 +3758,911 @@
       border-radius: 28px;
     }
 
+    body.surface-overlay .answer:empty {
+      display: none;
+    }
+
     body.surface-overlay .shortcut-toast {
       top: auto;
       bottom: 24px;
+    }
+
+    /* Reference-grade overlay surfaces for the native Mac shell. */
+    body.surface-overlay .launch-veil,
+    body.surface-setup .launch-veil {
+      display: none !important;
+    }
+
+    body.surface-overlay .layout {
+      padding: 0 42px;
+    }
+
+    body.surface-overlay .main {
+      width: min(1120px, calc(100vw - 40px));
+    }
+
+    body.surface-overlay .query-wrap {
+      padding: 22px 28px 28px;
+      border-radius: 52px;
+      border-color: rgba(255, 255, 255, 0.18);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.028)),
+        rgba(37, 45, 40, 0.46);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -48px 90px rgba(0, 0, 0, 0.12),
+        0 44px 140px rgba(0, 0, 0, 0.34);
+      backdrop-filter: blur(34px) saturate(135%);
+      -webkit-backdrop-filter: blur(34px) saturate(135%);
+    }
+
+    body.surface-overlay .query-row {
+      min-height: 92px;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      padding: 10px 22px 10px 28px;
+      border-radius: 48px;
+      background:
+        linear-gradient(180deg, rgba(247, 248, 244, 0.96), rgba(232, 234, 228, 0.92));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.92),
+        inset 0 -22px 34px rgba(0, 0, 0, 0.06),
+        0 18px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    body.surface-overlay .query-row::after {
+      content: "+";
+      color: rgba(17, 20, 17, 0.58);
+      font-size: 42px;
+      line-height: 1;
+      font-weight: 280;
+      padding: 0 8px 4px;
+    }
+
+    body.surface-overlay .query-row .query-mini-action,
+    body.surface-overlay .query-row .plan-btn,
+    body.surface-overlay .query-row .send-btn,
+    body.surface-overlay .query-hint {
+      display: none;
+    }
+
+    body.surface-overlay .prompt-glyph {
+      width: 44px;
+      height: 44px;
+      color: #1b1f1b;
+    }
+
+    body.surface-overlay .query-input {
+      min-height: 64px;
+      font-size: clamp(38px, 4.6vw, 58px);
+      font-weight: 500;
+    }
+
+    body.surface-overlay .taskbar-tools {
+      gap: 20px;
+      padding: 28px 0 10px;
+    }
+
+    body.surface-overlay .task-tool {
+      width: 42px;
+      height: 42px;
+      border-color: transparent;
+      background: transparent;
+      color: rgba(247, 247, 242, 0.92);
+      box-shadow: none;
+    }
+
+    body.surface-overlay .task-tool:hover,
+    body.surface-overlay .task-tool.active {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+        rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 16px 32px rgba(0, 0, 0, 0.24);
+    }
+
+    body.surface-overlay .tool-divider {
+      height: 36px;
+      margin: 0 4px;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    body.surface-setup .setup-panel {
+      padding: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 44%, rgba(28, 52, 48, 0.36), transparent 34%),
+        radial-gradient(ellipse at 48% 74%, rgba(155, 180, 164, 0.2), transparent 42%),
+        rgba(9, 12, 10, 0.28);
+      backdrop-filter: blur(30px) saturate(126%);
+      -webkit-backdrop-filter: blur(30px) saturate(126%);
+    }
+
+    body.surface-setup .setup-panel::before {
+      background:
+        radial-gradient(ellipse 34% 40% at 50% 48%, rgba(12, 32, 30, 0.42), transparent 72%),
+        linear-gradient(180deg, rgba(9, 12, 10, 0.08), rgba(9, 12, 10, 0.36));
+      filter: blur(18px);
+      opacity: 0.9;
+      animation: referenceDesktopVeil 12s ease-in-out infinite;
+    }
+
+    body.surface-setup .setup-panel::after {
+      background:
+        linear-gradient(90deg, transparent 0 20%, rgba(236, 245, 239, 0.048) 48%, transparent 76%),
+        repeating-linear-gradient(90deg, transparent 0 48px, rgba(255, 255, 255, 0.018) 49px 50px);
+      opacity: 0.28;
+      animation: setupScan 10s ease-in-out infinite;
+    }
+
+    body.surface-setup .setup-card {
+      width: 100vw;
+      min-height: 100vh;
+      display: block;
+      padding: 0;
+      animation: setupFade 420ms ease both;
+    }
+
+    body.surface-setup .setup-card::before {
+      display: none;
+    }
+
+    body.surface-setup .setup-cinematic {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      min-height: 100vh;
+      pointer-events: none;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    body.surface-setup .setup-cinematic::before,
+    body.surface-setup .setup-cinematic::after {
+      inset: 20% 26%;
+      opacity: 0.34;
+    }
+
+    body.surface-setup .setup-cinematic-mark {
+      display: none;
+    }
+
+    body.surface-setup .setup-cinematic > .setup-scene {
+      inset: 0;
+      animation: referenceScene 88s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .spec-scene {
+      padding: clamp(30px, 6vw, 86px);
+      text-align: center;
+      color: #fbfbf6;
+    }
+
+    .spec-scene::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+
+    .spec-stage-dark::before {
+      opacity: 1;
+      background: #151613;
+    }
+
+    .spec-stage-sage::before {
+      opacity: 1;
+      background:
+        radial-gradient(ellipse at 55% 52%, rgba(188, 201, 184, 0.24), transparent 34%),
+        radial-gradient(ellipse at 46% 96%, rgba(156, 183, 143, 0.22), transparent 38%),
+        linear-gradient(125deg, rgba(35, 51, 48, 0.9), rgba(125, 138, 120, 0.84));
+    }
+
+    .spec-stage-light {
+      color: #191a16;
+    }
+
+    .spec-stage-light::before {
+      opacity: 1;
+      background: #f5f2ec;
+    }
+
+    .spec-stage-secure::before {
+      opacity: 1;
+      background:
+        radial-gradient(ellipse at 78% 8%, rgba(216, 232, 222, 0.4), transparent 28%),
+        radial-gradient(ellipse at 65% 82%, rgba(164, 187, 150, 0.24), transparent 44%),
+        radial-gradient(ellipse at 20% 54%, rgba(2, 7, 6, 0.82), transparent 46%),
+        linear-gradient(135deg, #111711, #6f7d70 60%, #161814);
+      filter: saturate(0.86);
+    }
+
+    .spec-wordmark {
+      font-size: clamp(18px, 2vw, 28px);
+      font-weight: 480;
+      color: rgba(255, 255, 251, 0.86);
+      text-shadow: 0 0 34px rgba(237, 246, 239, 0.36);
+    }
+
+    .spec-center-stack {
+      display: grid;
+      place-items: center;
+      gap: 18px;
+      min-height: 100%;
+    }
+
+    .spec-lotus-mark {
+      width: clamp(38px, 5vw, 64px);
+      height: clamp(38px, 5vw, 64px);
+      color: rgba(255, 255, 251, 0.9);
+      filter:
+        drop-shadow(0 0 22px rgba(237, 246, 239, 0.38))
+        drop-shadow(0 0 52px rgba(89, 220, 208, 0.24));
+      animation: setupMarkFloat 7s ease-in-out infinite;
+    }
+
+    .spec-subtle-copy {
+      max-width: 420px;
+      color: rgba(255, 255, 251, 0.62);
+      font-size: clamp(15px, 1.6vw, 22px);
+      line-height: 1.32;
+      text-shadow: 0 0 22px rgba(0, 0, 0, 0.42);
+    }
+
+    .spec-shortcut-copy {
+      margin-top: 54px;
+      font-family: var(--font-display);
+      font-size: clamp(48px, 7vw, 96px);
+      line-height: 0.94;
+      font-weight: 500;
+      color: #fffffb;
+      text-shadow: 0 0 36px rgba(237, 246, 239, 0.2);
+    }
+
+    .spec-key-pair {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(22px, 5vw, 82px);
+    }
+
+    .spec-keycap {
+      width: clamp(210px, 28vw, 440px);
+      aspect-ratio: 1.5;
+      display: grid;
+      place-items: center;
+      border-radius: clamp(26px, 3.6vw, 46px);
+      border: 1px solid rgba(255, 255, 255, 0.105);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035)),
+        rgba(35, 35, 33, 0.94);
+      color: rgba(247, 247, 242, 0.64);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -28px 48px rgba(0, 0, 0, 0.22),
+        0 28px 80px rgba(0, 0, 0, 0.36);
+    }
+
+    .spec-key-symbol {
+      display: block;
+      font-size: clamp(64px, 9vw, 118px);
+      line-height: 0.76;
+    }
+
+    .spec-key-label {
+      display: block;
+      margin-top: clamp(22px, 3vw, 42px);
+      font-size: clamp(24px, 3vw, 42px);
+      color: rgba(247, 247, 242, 0.48);
+    }
+
+    .spec-key-plus {
+      color: rgba(247, 247, 242, 0.48);
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 300;
+    }
+
+    .spec-feature-stage {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.7fr) minmax(520px, 1.35fr);
+      align-items: center;
+      gap: clamp(26px, 6vw, 100px);
+      width: min(1760px, 100%);
+      min-height: 100%;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .spec-feature-copy {
+      align-self: start;
+      padding-top: clamp(8px, 2vw, 36px);
+    }
+
+    .spec-feature-title {
+      font-size: clamp(34px, 4.2vw, 68px);
+      line-height: 1.05;
+      font-weight: 530;
+      color: #f8f8f1;
+    }
+
+    .spec-feature-subtitle {
+      max-width: 560px;
+      margin-top: 22px;
+      color: rgba(248, 248, 241, 0.74);
+      font-size: clamp(18px, 2.15vw, 34px);
+      line-height: 1.28;
+    }
+
+    .spec-glass-shell {
+      justify-self: end;
+      width: min(1180px, 100%);
+      min-height: clamp(280px, 41vw, 560px);
+      display: grid;
+      align-items: start;
+      padding: clamp(18px, 2.2vw, 34px);
+      border-radius: clamp(42px, 5vw, 68px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background:
+        linear-gradient(110deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.034)),
+        rgba(39, 47, 41, 0.36);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -64px 120px rgba(0, 0, 0, 0.16),
+        0 48px 150px rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(38px) saturate(128%);
+      -webkit-backdrop-filter: blur(38px) saturate(128%);
+    }
+
+    .spec-taskbar-input {
+      width: 100%;
+      height: clamp(76px, 8vw, 116px);
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 0 clamp(18px, 2.4vw, 34px);
+      border-radius: 999px;
+      background: rgba(244, 245, 240, 0.94);
+      color: rgba(25, 28, 25, 0.44);
+      font-size: clamp(32px, 4vw, 58px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -22px 32px rgba(0, 0, 0, 0.055),
+        0 18px 34px rgba(0, 0, 0, 0.16);
+    }
+
+    .spec-cursor {
+      display: inline-block;
+      width: 3px;
+      height: 0.86em;
+      margin-right: 4px;
+      border-radius: 999px;
+      background: #43a3a0;
+      vertical-align: -0.12em;
+      animation: caretBlink 1s steps(1, end) infinite;
+    }
+
+    .spec-tool-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(16px, 2.4vw, 34px);
+      margin-top: clamp(26px, 4vw, 62px);
+      color: rgba(255, 255, 251, 0.9);
+    }
+
+    .spec-tool-icon {
+      width: clamp(32px, 3vw, 50px);
+      height: clamp(32px, 3vw, 50px);
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+    }
+
+    .spec-tool-icon.active {
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .spec-tool-icon svg,
+    .spec-mini-app svg,
+    .spec-cap-icon svg,
+    .spec-popover svg {
+      width: 70%;
+      height: 70%;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .spec-mini-app-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(92px, 1fr));
+      align-items: end;
+      gap: clamp(28px, 4vw, 64px);
+      margin-top: clamp(42px, 6vw, 96px);
+    }
+
+    .spec-window-card {
+      height: clamp(74px, 7vw, 112px);
+      border-radius: 9px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(233, 236, 232, 0.86));
+      box-shadow: 0 20px 44px rgba(0, 0, 0, 0.24);
+      opacity: 0.94;
+    }
+
+    .spec-mini-app {
+      width: clamp(38px, 4vw, 58px);
+      height: clamp(38px, 4vw, 58px);
+      margin: -18px 0 0 -12px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      color: #171916;
+      background: rgba(250, 251, 247, 0.94);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+    }
+
+    .spec-folder-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(82px, 1fr));
+      gap: clamp(24px, 4vw, 66px);
+      align-items: end;
+      margin-top: clamp(52px, 6vw, 94px);
+      text-align: center;
+    }
+
+    .spec-folder {
+      color: #ffffff;
+      font-size: clamp(17px, 1.6vw, 27px);
+      font-weight: 650;
+      text-shadow: 0 8px 22px rgba(0, 0, 0, 0.44);
+    }
+
+    .spec-folder::before {
+      content: "";
+      display: block;
+      width: clamp(72px, 6vw, 112px);
+      aspect-ratio: 1.22;
+      margin: 0 auto 16px;
+      border-radius: 12px 12px 16px 16px;
+      background:
+        linear-gradient(180deg, #6ed0ff 0 22%, #44b6e5 23%, #33a8da 100%);
+      box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.34), 0 18px 32px rgba(0, 0, 0, 0.28);
+    }
+
+    .spec-folder small {
+      display: block;
+      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.46);
+      font-size: clamp(12px, 1vw, 16px);
+    }
+
+    .spec-popover {
+      position: absolute;
+      top: clamp(82px, 10vw, 150px);
+      right: clamp(56px, 8vw, 144px);
+      width: min(420px, 38vw);
+      padding: 28px;
+      border-radius: 28px;
+      color: #30332e;
+      background: rgba(245, 247, 244, 0.88);
+      box-shadow: 0 22px 58px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .spec-popover::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -18px;
+      width: 34px;
+      height: 34px;
+      transform: translateX(-50%) rotate(45deg);
+      border-radius: 0 0 8px 0;
+      background: inherit;
+    }
+
+    .spec-popover-title {
+      margin-bottom: 18px;
+      color: rgba(48, 51, 46, 0.68);
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .spec-popover-row {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 14px;
+      align-items: center;
+      margin-top: 16px;
+      font-size: clamp(17px, 1.5vw, 26px);
+      font-weight: 650;
+    }
+
+    .spec-voice-pill {
+      width: min(1040px, 72vw);
+      min-height: clamp(120px, 13vw, 210px);
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto auto auto;
+      gap: clamp(24px, 4vw, 66px);
+      align-items: center;
+      padding: clamp(24px, 3.4vw, 52px) clamp(36px, 5vw, 84px);
+      border-radius: 999px;
+      background:
+        linear-gradient(180deg, rgba(106, 78, 58, 0.92), rgba(75, 55, 42, 0.92));
+      color: #fff8ed;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.17),
+        inset 0 -32px 58px rgba(0, 0, 0, 0.16),
+        0 38px 130px rgba(0, 0, 0, 0.42);
+    }
+
+    .spec-voice-title {
+      font-size: clamp(42px, 5.2vw, 78px);
+      font-weight: 640;
+    }
+
+    .spec-voice-meter {
+      display: grid;
+      grid-template-columns: repeat(10, clamp(8px, 1vw, 16px));
+      gap: clamp(7px, 0.9vw, 13px);
+    }
+
+    .spec-voice-meter span {
+      width: clamp(8px, 1vw, 16px);
+      height: clamp(8px, 1vw, 16px);
+      border-radius: 99px;
+      background: rgba(255, 212, 152, 0.34);
+      animation: voiceDot 1100ms ease-in-out infinite;
+    }
+
+    .spec-voice-meter span:nth-child(2n) { animation-delay: 90ms; }
+    .spec-voice-meter span:nth-child(3n) { animation-delay: 170ms; }
+    .spec-stop-square {
+      width: clamp(48px, 5vw, 78px);
+      height: clamp(48px, 5vw, 78px);
+      border-radius: 18px;
+      background: #f6c986;
+      box-shadow: inset 0 -10px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .spec-capabilities {
+      width: min(1740px, 100%);
+      min-height: 100%;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      text-align: left;
+    }
+
+    .spec-kicker {
+      color: #e8eef0;
+      font-size: clamp(17px, 1.6vw, 30px);
+      font-weight: 720;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+    }
+
+    .spec-cap-title {
+      max-width: 720px;
+      margin-top: 28px;
+      font-family: var(--font-display);
+      font-size: clamp(52px, 6vw, 92px);
+      font-weight: 500;
+      line-height: 1;
+      color: #fffefa;
+    }
+
+    .spec-cap-grid {
+      align-self: end;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(58px, 8vw, 130px) clamp(80px, 12vw, 210px);
+      margin-bottom: clamp(28px, 4vw, 70px);
+    }
+
+    .spec-cap-item {
+      min-width: 0;
+    }
+
+    .spec-cap-icon {
+      width: clamp(82px, 7vw, 118px);
+      height: clamp(82px, 7vw, 118px);
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      color: #213532;
+      background:
+        linear-gradient(180deg, rgba(240, 255, 253, 0.95), rgba(192, 219, 214, 0.94));
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -24px 34px rgba(0, 0, 0, 0.08),
+        0 22px 44px rgba(0, 0, 0, 0.34);
+    }
+
+    .spec-cap-name {
+      margin-top: 38px;
+      color: #fdfdf8;
+      font-size: clamp(26px, 2.8vw, 42px);
+      font-weight: 650;
+      line-height: 1.08;
+    }
+
+    .spec-cap-copy {
+      max-width: 420px;
+      margin-top: 14px;
+      color: rgba(247, 247, 242, 0.62);
+      font-size: clamp(16px, 1.7vw, 27px);
+      line-height: 1.36;
+    }
+
+    .spec-secure-copy {
+      max-width: 1120px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .spec-secure-title {
+      font-family: var(--font-display);
+      font-size: clamp(62px, 7.2vw, 106px);
+      line-height: 1;
+      font-weight: 500;
+      color: #fffffb;
+    }
+
+    .spec-secure-body {
+      max-width: 1020px;
+      margin: 48px auto 0;
+      color: rgba(247, 247, 242, 0.58);
+      font-size: clamp(26px, 3.2vw, 46px);
+      line-height: 1.28;
+      font-weight: 520;
+    }
+
+    .spec-orbit {
+      width: min(1300px, 92vw);
+      height: min(920px, 70vh);
+      margin: 60px auto 0;
+      position: relative;
+    }
+
+    .spec-orbit-ring {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border: 1px solid rgba(25, 26, 22, 0.055);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .spec-orbit-ring:nth-child(1) { width: 34%; aspect-ratio: 1; }
+    .spec-orbit-ring:nth-child(2) { width: 52%; aspect-ratio: 1; }
+    .spec-orbit-ring:nth-child(3) { width: 70%; aspect-ratio: 1; }
+
+    .spec-orbit-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: clamp(150px, 14vw, 230px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.84), rgba(211, 211, 204, 0.92));
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -28px 44px rgba(0, 0, 0, 0.11),
+        0 24px 70px rgba(0, 0, 0, 0.12);
+    }
+
+    .spec-orbit-core::before {
+      content: "";
+      width: 12px;
+      height: 104px;
+      border-radius: 999px;
+      background: #050505;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 20px 24px rgba(0, 0, 0, 0.14);
+    }
+
+    .spec-model-tile {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: clamp(64px, 6.4vw, 96px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      color: rgba(25, 26, 22, 0.43);
+      font-size: 24px;
+      font-weight: 760;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 246, 242, 0.74));
+      border: 1px solid rgba(25, 26, 22, 0.06);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 18px 42px rgba(0, 0, 0, 0.06);
+      transform: translate(-50%, -50%) rotate(var(--a)) translateY(var(--r)) rotate(calc(var(--a) * -1));
+      animation: orbitFloat 7s ease-in-out infinite;
+      animation-delay: var(--float, 0s);
+    }
+
+    body.surface-setup .setup-top {
+      position: fixed;
+      left: 24px;
+      right: 24px;
+      bottom: 22px;
+      z-index: 4;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      width: auto;
+      padding: 12px 14px 12px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+        rgba(10, 14, 12, 0.56);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        0 22px 76px rgba(0, 0, 0, 0.34);
+      backdrop-filter: blur(26px) saturate(132%);
+      -webkit-backdrop-filter: blur(26px) saturate(132%);
+    }
+
+    body.surface-setup .setup-title {
+      font-family: var(--font-ui);
+      font-size: 14px;
+      line-height: 1.2;
+      font-weight: 680;
+      color: rgba(255, 255, 251, 0.88);
+      text-shadow: none;
+    }
+
+    body.surface-setup .setup-summary {
+      max-width: none;
+      margin-top: 2px;
+      color: rgba(255, 255, 251, 0.52);
+      font-size: 12px;
+      line-height: 1.24;
+      text-shadow: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    body.surface-setup .setup-run {
+      min-height: 38px;
+      padding: 0 16px;
+      color: #111411;
+      background: rgba(242, 244, 238, 0.92);
+      border-color: rgba(255, 255, 255, 0.34);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), 0 14px 32px rgba(0, 0, 0, 0.24);
+    }
+
+    body.surface-setup .setup-wizard,
+    body.surface-setup .setup-steps {
+      display: none !important;
+    }
+
+    body.surface-setup .setup-actions,
+    body.surface-setup .setup-log {
+      position: fixed;
+      z-index: 4;
+      left: 24px;
+      right: 24px;
+      bottom: 86px;
+      max-height: 150px;
+      overflow: auto;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 26px;
+      background: rgba(10, 14, 12, 0.46);
+      backdrop-filter: blur(24px) saturate(132%);
+      -webkit-backdrop-filter: blur(24px) saturate(132%);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.26);
+    }
+
+    body.surface-setup .setup-actions {
+      display: none;
+      inset: 20px 20px auto auto;
+      max-height: none;
+      padding: 10px;
+      border-radius: 999px;
+    }
+
+    body.surface-setup .setup-actions.show {
+      display: flex;
+    }
+
+    body.surface-setup #modelDownloadActions.show {
+      top: 82px;
+      border-radius: 24px;
+      max-width: min(620px, calc(100vw - 40px));
+    }
+
+    body.surface-setup .setup-log.show {
+      display: block;
+      max-height: 74px;
+      font-size: 10px;
+      bottom: 84px;
+    }
+
+    @keyframes referenceScene {
+      0%, 5.8% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.992);
+        filter: blur(12px);
+      }
+      8.8%, 14.8% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+      18%, 100% {
+        opacity: 0;
+        transform: translateY(-8px) scale(1.006);
+        filter: blur(12px);
+      }
+    }
+
+    @keyframes referenceDesktopVeil {
+      0%, 100% { opacity: 0.82; transform: translateX(-1.5%) scale(1.02); }
+      50% { opacity: 1; transform: translateX(1.5%) scale(1.05); }
+    }
+
+    @keyframes caretBlink {
+      0%, 45% { opacity: 1; }
+      46%, 100% { opacity: 0; }
+    }
+
+    @keyframes orbitFloat {
+      0%, 100% {
+        margin-top: 0;
+        opacity: 0.72;
+      }
+      50% {
+        margin-top: -14px;
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 920px) {
+      .spec-feature-stage {
+        grid-template-columns: 1fr;
+        align-content: center;
+        text-align: left;
+      }
+
+      .spec-feature-copy {
+        padding-top: 0;
+      }
+
+      .spec-glass-shell {
+        justify-self: stretch;
+      }
+
+      .spec-cap-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 36px;
+      }
+
+      .spec-folder-grid,
+      .spec-mini-app-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 980px) {
@@ -3387,13 +4776,7 @@
   <div id="launchVeil" class="launch-veil" aria-hidden="true">
     <div class="launch-core">
       <div class="launch-copy">
-        <svg class="launch-logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-          <path d="M16 44 C22 36 27 35 32 42 C37 35 42 36 48 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-          <path d="M32 12 C23 24 24 36 32 46 C40 36 41 24 32 12Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-          <path d="M21 23 C16 34 19 42 32 47 C31 34 28 27 21 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-          <path d="M43 23 C48 34 45 42 32 47 C33 34 36 27 43 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-          <circle cx="32" cy="44" r="4" fill="currentColor"/>
-        </svg>
+        <img class="launch-logo" src="/assets/icons/locus-app-icon-128.png" alt="" />
         <div class="launch-title">Your local computer is here</div>
         <div class="launch-subtitle">One shortcut. Total context. Fully local.</div>
       </div>
@@ -3403,29 +4786,7 @@
   <div class="app">
     <header class="header">
       <div class="logo">
-        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-          <defs>
-            <radialGradient id="lotusCoreGlow" cx="50%" cy="68%" r="50%">
-              <stop offset="0" stop-color="#fff7b8" stop-opacity="0.7"/>
-              <stop offset="0.55" stop-color="#edf6ef" stop-opacity="0.24"/>
-              <stop offset="1" stop-color="#8fa39a" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <ellipse cx="32" cy="38" rx="21" ry="19" fill="url(#lotusCoreGlow)"/>
-          <g>
-            <ellipse class="petal petal-low" cx="20" cy="39" rx="7.3" ry="16.8" transform="rotate(-58 20 39)"/>
-            <ellipse class="petal petal-low" cx="44" cy="39" rx="7.3" ry="16.8" transform="rotate(58 44 39)"/>
-            <ellipse class="petal petal-side" cx="24.7" cy="31.6" rx="7.8" ry="18.7" transform="rotate(-32 24.7 31.6)"/>
-            <ellipse class="petal petal-side" cx="39.3" cy="31.6" rx="7.8" ry="18.7" transform="rotate(32 39.3 31.6)"/>
-            <ellipse class="petal petal-mid" cx="32" cy="26.4" rx="8.2" ry="20.2"/>
-            <ellipse class="petal petal-center" cx="27.7" cy="40.6" rx="7.6" ry="14.8" transform="rotate(-18 27.7 40.6)"/>
-            <ellipse class="petal petal-center" cx="36.3" cy="40.6" rx="7.6" ry="14.8" transform="rotate(18 36.3 40.6)"/>
-            <ellipse class="petal petal-center" cx="32" cy="42.8" rx="7.1" ry="13.1"/>
-          </g>
-          <circle class="lotus-core" cx="32" cy="42.5" r="4.8"/>
-          <path class="lotus-stem" d="M32 47.2 C32.6 50.2 32.2 53.2 31.1 56.2"/>
-          <path class="lotus-water" d="M13.5 52.4 C20.8 48.8 27.7 48.7 32 51.2 C36.3 48.7 43.2 48.8 50.5 52.4"/>
-        </svg>
+        <img class="brand-icon" src="/assets/icons/locus-app-icon-64.png" alt="" />
         <span>Locus</span>
       </div>
       <div class="header-actions">
@@ -3443,6 +4804,10 @@
 
     <div class="layout">
       <aside class="panel side-panel">
+        <div class="panel-title">Conversation</div>
+        <div id="conversationSummary" class="conversation-summary">No conversation yet. Long chats compact automatically.</div>
+        <div id="conversationList" class="conversation-list"></div>
+
         <div class="panel-title">Memory</div>
         <div id="memoryList" class="memory-body"></div>
 
@@ -3457,6 +4822,14 @@
         <div class="ram-form">
           <input id="maxRamInput" class="ram-input" type="text" inputmode="decimal" placeholder="Max RAM GB" />
           <button id="saveRamBtn" class="ram-save" type="button">Set</button>
+        </div>
+        <div class="compute-form">
+          <div class="compute-form-head">
+            <span>Compute Cap</span>
+            <strong id="computeCapLabel">90%</strong>
+          </div>
+          <input id="maxComputeInput" class="range-slider" type="range" min="50" max="99" step="1" value="90" />
+          <div id="computeCapWarning" class="compute-warning">90% recommended for local model runs.</div>
         </div>
 
         <div class="panel-title">Attachments</div>
@@ -3473,78 +4846,247 @@
         <div id="setupPanel" class="setup-panel">
           <div class="setup-card">
             <div class="setup-cinematic" aria-hidden="true">
-              <svg class="setup-cinematic-mark" viewBox="0 0 64 64" focusable="false">
-                <path d="M16 44 C22 36 27 35 32 42 C37 35 42 36 48 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                <path d="M32 12 C23 24 24 36 32 46 C40 36 41 24 32 12Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-                <path d="M21 23 C16 34 19 42 32 47 C31 34 28 27 21 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-                <path d="M43 23 C48 34 45 42 32 47 C33 34 36 27 43 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-              </svg>
-              <div class="setup-scene">
-                <div>
-                  <div class="setup-scene-line">Your local computer is here</div>
+              <div class="setup-scene spec-scene" style="--delay: 0s">
+                <div class="spec-center-stack">
+                  <div class="spec-wordmark">locus</div>
                 </div>
               </div>
-              <div class="setup-scene">
-                <div>
-                  <div class="setup-scene-line">Press both <em>command</em> keys</div>
-                  <div class="setup-key-pair">
-                    <div class="setup-keycap">
+              <div class="setup-scene spec-scene" style="--delay: 8s">
+                <div class="spec-center-stack">
+                  <svg class="spec-lotus-mark" viewBox="0 0 64 64" focusable="false">
+                    <path d="M16 44 C22 36 27 35 32 42 C37 35 42 36 48 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M32 12 C23 24 24 36 32 46 C40 36 41 24 32 12Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M21 23 C16 34 19 42 32 47 C31 34 28 27 21 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M43 23 C48 34 45 42 32 47 C33 34 36 27 43 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                  </svg>
+                  <div class="spec-subtle-copy">Start tasks from anywhere on your Mac.</div>
+                </div>
+              </div>
+              <div class="setup-scene spec-scene spec-stage-dark" style="--delay: 16s">
+                <div class="spec-center-stack">
+                  <div class="spec-key-pair">
+                    <div class="spec-keycap">
                       <span>
-                        <span class="setup-key-symbol">⌘</span>
-                        <span class="setup-key-label">command</span>
+                        <span class="spec-key-symbol">⌘</span>
+                        <span class="spec-key-label">command</span>
                       </span>
                     </div>
-                    <span class="setup-key-plus">+</span>
-                    <div class="setup-keycap">
+                    <span class="spec-key-plus">+</span>
+                    <div class="spec-keycap">
                       <span>
-                        <span class="setup-key-symbol">⌘</span>
-                        <span class="setup-key-label">command</span>
+                        <span class="spec-key-symbol">⌘</span>
+                        <span class="spec-key-label">command</span>
                       </span>
                     </div>
                   </div>
+                  <div class="spec-shortcut-copy">One shortcut. Total context.</div>
                 </div>
               </div>
-              <div class="setup-scene">
-                <div>
-                  <div class="setup-scene-line">Meet the <em>command bar</em></div>
-                  <div class="setup-command-demo">
-                    <div class="setup-command-row">
-                      <span class="setup-command-dot">✧</span>
-                      <span>Ask anything...</span>
-                      <span class="setup-app-token">+</span>
+              <div class="setup-scene spec-scene spec-stage-sage" style="--delay: 24s">
+                <div class="spec-feature-stage">
+                  <div class="spec-feature-copy">
+                    <div class="spec-feature-title">The task bar</div>
+                    <div class="spec-feature-subtitle">One shortcut summons Locus anywhere on your Mac. Clean, focused, ready.</div>
+                  </div>
+                  <div class="spec-glass-shell">
+                    <div class="spec-taskbar-input">
+                      <svg class="spec-lotus-mark" viewBox="0 0 64 64" focusable="false">
+                        <path d="M16 44 C22 36 27 35 32 42 C37 35 42 36 48 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M32 12 C23 24 24 36 32 46 C40 36 41 24 32 12Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                        <path d="M21 23 C16 34 19 42 32 47 C31 34 28 27 21 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                        <path d="M43 23 C48 34 45 42 32 47 C33 34 36 27 43 23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                      </svg>
+                      <span><span class="spec-cursor"></span>Ask anything...</span>
+                      <span>+</span>
                     </div>
-                    <div class="setup-command-tools">
-                      <span class="setup-mini-tool"></span>
-                      <span class="setup-mini-tool"></span>
-                      <span class="setup-mini-tool"></span>
-                      <span class="setup-mini-tool"></span>
-                      <span class="setup-mini-tool"></span>
-                      <span class="setup-mini-tool"></span>
+                    <div class="spec-tool-row">
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M4 6 H20"/><path d="M4 12 H20"/><path d="M4 18 H20"/><path d="M7 3 V21"/><path d="M17 3 V21"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M3 7 A2 2 0 0 1 5 5 H9 L11 7 H19 A2 2 0 0 1 21 9 V18 A2 2 0 0 1 19 20 H5 A2 2 0 0 1 3 18 Z"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 15 L11 12 L14 15 L16 13 L20 17"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M8 4 H15 L19 8 V20 H8 Z"/><path d="M15 4 V8 H19"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5 L12.6 19.9 A6 6 0 0 1 4.1 11.4 L12.5 3 A4 4 0 1 1 18.2 8.7 L9.8 17.1 A2 2 0 0 1 7 14.2 L15.1 6.1"/></svg></span>
+                      <span class="tool-divider"></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M12 3 V21"/><path d="M8 7 V17"/><path d="M16 7 V17"/><path d="M4 10 V14"/><path d="M20 10 V14"/></svg></span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="setup-scene">
-                <div>
-                  <div class="setup-scene-line">Use your voice to control Locus</div>
-                  <div class="setup-voice-demo">
-                    <div class="setup-voice-title">Listening...</div>
-                    <div class="setup-voice-dots">
-                      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <div class="setup-scene spec-scene spec-stage-sage" style="--delay: 32s">
+                <div class="spec-feature-stage">
+                  <div class="spec-feature-copy">
+                    <div class="spec-feature-title">Local files</div>
+                    <div class="spec-feature-subtitle">Connect any folder. Locus reads, writes, and searches your files.</div>
+                  </div>
+                  <div class="spec-glass-shell">
+                    <div class="spec-taskbar-input">
+                      <svg viewBox="0 0 24 24" width="46" height="46"><path d="M3 7 A2 2 0 0 1 5 5 H9 L11 7 H19 A2 2 0 0 1 21 9 V18 A2 2 0 0 1 19 20 H5 A2 2 0 0 1 3 18 Z" fill="none" stroke="#1b1f1b" stroke-width="2"/></svg>
+                      <span><span class="spec-cursor"></span>Start a task...</span>
+                      <span>+</span>
                     </div>
-                    <span class="setup-app-token setup-stop-token"></span>
+                    <div class="spec-tool-row">
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M4 6 H20"/><path d="M7 3 V21"/><path d="M17 3 V21"/></svg></span>
+                      <span class="spec-tool-icon active"><svg viewBox="0 0 24 24"><path d="M3 7 A2 2 0 0 1 5 5 H9 L11 7 H19 A2 2 0 0 1 21 9 V18 A2 2 0 0 1 19 20 H5 A2 2 0 0 1 3 18 Z"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M8 4 H15 L19 8 V20 H8 Z"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5 L12.6 19.9 A6 6 0 0 1 4.1 11.4 L12.5 3 A4 4 0 1 1 18.2 8.7 L9.8 17.1 A2 2 0 0 1 7 14.2 L15.1 6.1"/></svg></span>
+                      <span class="tool-divider"></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M12 3 V21"/><path d="M8 7 V17"/><path d="M16 7 V17"/></svg></span>
+                    </div>
+                    <div class="spec-folder-grid">
+                      <div class="spec-folder">Downloads<small>4 items</small></div>
+                      <div class="spec-folder">Documents<small>10 items</small></div>
+                      <div class="spec-folder">Screenshots<small>248 items</small></div>
+                      <div class="spec-folder">Desktop<small>1 item</small></div>
+                      <div class="spec-folder">Videos<small>16 items</small></div>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="setup-scene">
+              <div class="setup-scene spec-scene spec-stage-sage" style="--delay: 40s">
+                <div class="spec-feature-stage">
+                  <div class="spec-feature-copy">
+                    <div class="spec-feature-title">App control</div>
+                    <div class="spec-feature-subtitle">Operate Mail, Finder, Slack, and native Mac apps directly through Locus.</div>
+                  </div>
+                  <div class="spec-glass-shell">
+                    <div class="spec-taskbar-input">
+                      <svg class="spec-lotus-mark" viewBox="0 0 64 64" focusable="false">
+                        <path d="M16 44 C22 36 27 35 32 42 C37 35 42 36 48 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M32 12 C23 24 24 36 32 46 C40 36 41 24 32 12Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                      </svg>
+                      <span><span class="spec-cursor"></span>Start a task...</span>
+                      <span>+</span>
+                    </div>
+                    <div class="spec-tool-row">
+                      <span class="spec-tool-icon active"><svg viewBox="0 0 24 24"><path d="M4 6 H20"/><path d="M4 12 H20"/><path d="M4 18 H20"/><path d="M7 3 V21"/><path d="M17 3 V21"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M3 7 A2 2 0 0 1 5 5 H9 L11 7 H19 A2 2 0 0 1 21 9 V18 A2 2 0 0 1 19 20 H5 A2 2 0 0 1 3 18 Z"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M8 4 H15 L19 8 V20 H8 Z"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5 L12.6 19.9 A6 6 0 0 1 4.1 11.4 L12.5 3 A4 4 0 1 1 18.2 8.7 L9.8 17.1 A2 2 0 0 1 7 14.2 L15.1 6.1"/></svg></span>
+                      <span class="tool-divider"></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M12 3 V21"/><path d="M8 7 V17"/><path d="M16 7 V17"/></svg></span>
+                    </div>
+                    <div class="spec-mini-app-grid">
+                      <div><div class="spec-window-card"></div><div class="spec-mini-app">N</div></div>
+                      <div><div class="spec-window-card"></div><div class="spec-mini-app">S</div></div>
+                      <div><div class="spec-window-card"></div><div class="spec-mini-app">F</div></div>
+                      <div><div class="spec-window-card"></div><div class="spec-mini-app">M</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="setup-scene spec-scene spec-stage-sage" style="--delay: 48s">
+                <div class="spec-feature-stage">
+                  <div class="spec-feature-copy">
+                    <div class="spec-feature-title">Context aware</div>
+                    <div class="spec-feature-subtitle">Locus sees your active app and surfaces the right tools automatically.</div>
+                  </div>
+                  <div class="spec-glass-shell">
+                    <div class="spec-taskbar-input">
+                      <span style="display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:#5fb4ff;color:white;">✉</span>
+                      <span><span class="spec-cursor"></span>Start in Mail...</span>
+                      <span>+</span>
+                    </div>
+                    <div class="spec-popover">
+                      <div class="spec-popover-title">Locus can</div>
+                      <div class="spec-popover-row"><svg viewBox="0 0 24 24"><path d="M4 20 H20"/><path d="M7 17 L17 7"/><path d="M14 7 H17 V10"/></svg><span>Compose Emails</span></div>
+                      <div class="spec-popover-row"><svg viewBox="0 0 24 24"><path d="M4 7 H20 V19 H4 Z"/><path d="M4 7 L12 13 L20 7"/></svg><span>View Mailboxes</span></div>
+                      <div class="spec-popover-row"><svg viewBox="0 0 24 24"><path d="M4 7 L12 13 L20 7"/><path d="M4 7 H20 V19 H4 Z"/></svg><span>Read Emails</span></div>
+                      <div class="spec-popover-row"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="5"/><path d="M14 14 L20 20"/></svg><span>Search Emails</span></div>
+                      <div class="spec-popover-row"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg><span>Read Window Context</span></div>
+                    </div>
+                    <div class="spec-tool-row">
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M4 6 H20"/><path d="M7 3 V21"/><path d="M17 3 V21"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M3 7 A2 2 0 0 1 5 5 H9 L11 7 H19 A2 2 0 0 1 21 9 V18 A2 2 0 0 1 19 20 H5 A2 2 0 0 1 3 18 Z"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M8 4 H15 L19 8 V20 H8 Z"/></svg></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5 L12.6 19.9 A6 6 0 0 1 4.1 11.4 L12.5 3 A4 4 0 1 1 18.2 8.7 L9.8 17.1 A2 2 0 0 1 7 14.2 L15.1 6.1"/></svg></span>
+                      <span class="tool-divider"></span>
+                      <span class="spec-tool-icon"><svg viewBox="0 0 24 24"><path d="M12 3 V21"/><path d="M8 7 V17"/><path d="M16 7 V17"/></svg></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="setup-scene spec-scene spec-stage-sage" style="--delay: 56s">
+                <div class="spec-feature-stage">
+                  <div class="spec-feature-copy">
+                    <div class="spec-feature-title">Voice mode</div>
+                    <div class="spec-feature-subtitle">Speak naturally. Locus listens, thinks, and acts on your Mac.</div>
+                  </div>
+                  <div class="spec-center-stack">
+                    <div class="spec-voice-pill">
+                      <div class="spec-voice-title">Listening...</div>
+                      <svg width="62" height="62" viewBox="0 0 24 24"><path d="M12 3 V15" fill="none" stroke="#f6c986" stroke-width="2"/><path d="M8 7 V14" fill="none" stroke="#f6c986" stroke-width="2"/><path d="M16 7 V14" fill="none" stroke="#f6c986" stroke-width="2"/><path d="M8 20 H16" fill="none" stroke="#f6c986" stroke-width="2"/></svg>
+                      <div class="spec-voice-meter"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                      <span class="spec-stop-square"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="setup-scene spec-scene spec-stage-dark" style="--delay: 64s">
+                <div class="spec-capabilities">
+                  <div>
+                    <div class="spec-kicker">Capabilities</div>
+                    <div class="spec-cap-title">What Locus can do on your Mac.</div>
+                  </div>
+                  <div class="spec-cap-grid">
+                    <div class="spec-cap-item">
+                      <div class="spec-cap-icon"><svg viewBox="0 0 24 24"><path d="M3 7 A2 2 0 0 1 5 5 H9 L11 7 H19 A2 2 0 0 1 21 9 V18 A2 2 0 0 1 19 20 H5 A2 2 0 0 1 3 18 Z"/></svg></div>
+                      <div class="spec-cap-name">Local file access</div>
+                      <div class="spec-cap-copy">Connect any folder. Locus searches, reads, and writes your files directly.</div>
+                    </div>
+                    <div class="spec-cap-item">
+                      <div class="spec-cap-icon"><svg viewBox="0 0 24 24"><rect x="6" y="7" width="11" height="11" rx="2"/><rect x="9" y="4" width="11" height="11" rx="2"/></svg></div>
+                      <div class="spec-cap-name">App control</div>
+                      <div class="spec-cap-copy">Operate Mail, Notes, Finder, Slack, and native Mac apps.</div>
+                    </div>
+                    <div class="spec-cap-item">
+                      <div class="spec-cap-icon"><svg viewBox="0 0 24 24"><path d="M6 8 H18 V16 H6 Z"/><path d="M8 16 H16"/><circle cx="17" cy="17" r="1"/></svg></div>
+                      <div class="spec-cap-name">Always on</div>
+                      <div class="spec-cap-copy">Runs from the menu bar in the background with local approvals.</div>
+                    </div>
+                    <div class="spec-cap-item">
+                      <div class="spec-cap-icon"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="8" height="14" rx="2"/><path d="M17 9 C19 11 19 13 17 15"/></svg></div>
+                      <div class="spec-cap-name">Phone remote</div>
+                      <div class="spec-cap-copy">Start tasks remotely and pick them up at your desk.</div>
+                    </div>
+                    <div class="spec-cap-item">
+                      <div class="spec-cap-icon"><svg viewBox="0 0 24 24"><path d="M4 18 C8 8 14 5 20 8"/><path d="M7 18 C10 11 14 9 18 11"/><path d="M10 18 C12 14 14 13 16 14"/></svg></div>
+                      <div class="spec-cap-name">Local browser</div>
+                      <div class="spec-cap-copy">Browse, research, and automate the web without switching contexts.</div>
+                    </div>
+                    <div class="spec-cap-item">
+                      <div class="spec-cap-icon"><svg viewBox="0 0 24 24"><path d="M12 3 V21"/><path d="M8 7 V17"/><path d="M16 7 V17"/><path d="M4 10 V14"/><path d="M20 10 V14"/></svg></div>
+                      <div class="spec-cap-name">Voice mode</div>
+                      <div class="spec-cap-copy">Talk to your Mac. Locus understands context and acts.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="setup-scene spec-scene spec-stage-secure" style="--delay: 72s">
+                <div class="spec-secure-copy">
+                  <div class="spec-secure-title">Secure by design.</div>
+                  <div class="spec-secure-body">Locus executes actions in an isolated local workspace, with on-device authorization protecting sensitive steps and giving you control over what happens on your Mac.</div>
+                </div>
+              </div>
+              <div class="setup-scene spec-scene spec-stage-light" style="--delay: 80s">
                 <div>
-                  <div class="setup-scene-line">Now let's make it yours</div>
-                  <div class="setup-ready-badge">
-                    <span class="setup-ready-mark">✧</span>
-                    <span>
-                      <span class="setup-ready-title">Local by default</span>
-                      <span class="setup-ready-subtitle">Models stay off until you enable them.</span>
-                    </span>
+                  <div class="spec-kicker" style="color:#2f7877;text-align:center;">Model Orchestration</div>
+                  <div class="spec-cap-title" style="max-width:1180px;margin:26px auto 0;text-align:center;color:#191a16;">Locus creates teams of local agents across the models your machine can run.</div>
+                  <div class="spec-orbit">
+                    <div class="spec-orbit-ring"></div>
+                    <div class="spec-orbit-ring"></div>
+                    <div class="spec-orbit-ring"></div>
+                    <div class="spec-orbit-core"></div>
+                    <div class="spec-model-tile" style="--a: 0deg; --r: -310px; --float: 0s;">Q</div>
+                    <div class="spec-model-tile" style="--a: 32deg; --r: -380px; --float: .2s;">M</div>
+                    <div class="spec-model-tile" style="--a: 66deg; --r: -300px; --float: .4s;">V</div>
+                    <div class="spec-model-tile" style="--a: 102deg; --r: -390px; --float: .6s;">R</div>
+                    <div class="spec-model-tile" style="--a: 146deg; --r: -320px; --float: .8s;">E</div>
+                    <div class="spec-model-tile" style="--a: 196deg; --r: -370px; --float: 1s;">C</div>
+                    <div class="spec-model-tile" style="--a: 236deg; --r: -300px; --float: 1.2s;">A</div>
+                    <div class="spec-model-tile" style="--a: 278deg; --r: -382px; --float: 1.4s;">S</div>
+                    <div class="spec-model-tile" style="--a: 318deg; --r: -316px; --float: 1.6s;">L</div>
                   </div>
                 </div>
               </div>
@@ -3552,7 +5094,7 @@
             <div class="setup-top">
               <div>
                 <div class="setup-title">Set up Locus</div>
-                <div id="setupSummary" class="setup-summary">Locus will install what it needs and show each step.</div>
+                <div id="setupSummary" class="setup-summary">Model files are optional; downloads ask permission and show space first.</div>
               </div>
               <button id="setupRunBtn" class="setup-run" type="button">Start Setup</button>
             </div>
@@ -3563,21 +5105,36 @@
               </div>
               <div id="setupWizardGrid" class="setup-wizard-grid"></div>
             </div>
+            <div id="shortcutRehearsal" class="shortcut-rehearsal" aria-label="Shortcut rehearsal">
+              <div id="cmdRehearsal" class="shortcut-rehearsal-card">
+                <span class="shortcut-key">⌘ ⌘</span>
+                <span>Press both Command keys to rehearse summon.</span>
+              </div>
+              <div id="fnRehearsal" class="shortcut-rehearsal-card">
+                <span class="shortcut-key">fn</span>
+                <span>Hold fn to rehearse voice handoff.</span>
+              </div>
+            </div>
             <div id="setupSteps" class="setup-steps"></div>
             <div id="permissionActions" class="setup-actions">
               <button id="openFullDiskBtn" class="setup-secondary" type="button">Open Full Disk Access</button>
               <button id="openAccessibilityBtn" class="setup-secondary" type="button">Open Accessibility</button>
               <button id="checkFullDiskBtn" class="setup-secondary" type="button">Check Again</button>
             </div>
+            <div id="modelDownloadActions" class="setup-actions">
+              <div id="modelDownloadEstimate" class="setup-step-help">Recommended models will download only after approval.</div>
+              <button id="approveModelDownloadsBtn" class="setup-secondary" type="button">Approve Model Downloads</button>
+              <button id="skipModelDownloadsBtn" class="setup-secondary" type="button">Skip Models for Now</button>
+            </div>
             <div id="setupLog" class="setup-log"></div>
           </div>
         </div>
 
-        <section class="workspace-console" aria-label="Lotus Workspace">
+        <section class="workspace-console" aria-label="Locus Workspace">
           <div class="console-header">
             <div>
-              <div class="console-kicker">Lotus Workspace</div>
-              <h1 class="console-title">Locus blooms inside this folder.</h1>
+              <div class="console-kicker">Locus Workspace</div>
+              <h1 class="console-title">Locus lives inside this folder.</h1>
               <div id="workspacePath" class="console-subtitle">Detecting workspace...</div>
             </div>
             <div class="console-mode">
@@ -3599,7 +5156,7 @@
             <div class="console-card" style="--console-accent: var(--color-accent);">
               <div class="console-label">Resource Budget</div>
               <div id="consoleBudget" class="console-value">Detecting</div>
-              <div id="consoleBudgetMeta" class="console-meta">GPU capped at 95%</div>
+              <div id="consoleBudgetMeta" class="console-meta">GPU capped at 90%</div>
             </div>
             <div class="console-card" style="--console-accent: var(--color-primary-2);">
               <div class="console-label">Best Local Fit</div>
@@ -3619,18 +5176,14 @@
         <div class="resource-warning">
           <div class="resource-warning-title">Resource warning</div>
           <div id="resourceWarningText" class="resource-warning-copy">
-            It is highly recommended not to use other apps while Locus runs. GPU use is capped at 95%.
+            It is highly recommended not to use other apps while Locus runs. GPU use is capped at 90%.
           </div>
         </div>
 
         <div id="queryWrap" class="query-wrap">
           <div class="query-row">
             <span class="prompt-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M7 19 C9.6 15.8 10.8 13 12 5 C13.2 13 14.4 15.8 17 19"/>
-                <path d="M5 13 H19"/>
-                <path d="M8 19 H16"/>
-              </svg>
+              <img src="/assets/icons/locus-app-icon-64.png" alt="" />
             </span>
             <input id="queryInput" class="query-input" type="text" placeholder="Ask this folder, run a local tool, or draft a plan..." autocomplete="off" />
             <button id="createFileBtn" class="task-tool query-mini-action" type="button" aria-label="Create a file">
@@ -3640,6 +5193,7 @@
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2 V6"/><path d="M12 18 V22"/><path d="M2 12 H6"/><path d="M18 12 H22"/><path d="M4.9 4.9 L7.8 7.8"/><path d="M16.2 16.2 L19.1 19.1"/><path d="M19.1 4.9 L16.2 7.8"/><path d="M7.8 16.2 L4.9 19.1"/></svg>
             </button>
             <button id="planModeBtn" class="plan-btn" type="button" aria-pressed="false">Plan</button>
+            <button id="learnStepBtn" class="plan-btn learn-btn" type="button" aria-pressed="false">Learn</button>
             <button id="sendBtn" class="send-btn" aria-label="Run local request">Run</button>
           </div>
           <div class="taskbar-tools" aria-label="Context tools">
@@ -3662,6 +5216,12 @@
             <button id="voiceBtn" class="task-tool" type="button" aria-label="Start voice mode">
               <svg viewBox="0 0 24 24"><path d="M12 3 V21"/><path d="M8 7 V17"/><path d="M16 7 V17"/><path d="M4 10 V14"/><path d="M20 10 V14"/></svg>
             </button>
+          </div>
+          <div class="intelligence-strip" aria-label="Local intelligence">
+            <span class="intelligence-title">Intelligence</span>
+            <input id="intelligenceRange" class="range-slider" type="range" min="0" max="5" step="1" value="2" />
+            <span id="intelligenceLabel" class="intelligence-label">medium</span>
+            <span id="intelligenceWarning" class="intelligence-warning">Balanced local tools</span>
           </div>
           <div id="queryHint" class="query-hint">Local models stay off unless you enable them.</div>
           <input id="folderInput" type="file" multiple webkitdirectory hidden />
@@ -3770,10 +5330,39 @@
           <div id="placementControl" class="autonomy-control"></div>
         </div>
         <div class="safety-section">
+          <div class="safety-section-title">Compute Usage</div>
+          <div id="usageCapControl" class="usage-control"></div>
+        </div>
+        <div class="safety-section">
+          <div class="safety-section-title">Feature Gates</div>
+          <div id="featureGateList" class="feature-gates"></div>
+        </div>
+        <div class="safety-section">
           <div class="safety-section-title">Automations</div>
           <div id="settingsAutomations" class="safety-line"></div>
         </div>
       </div>
+    </div>
+  </div>
+  <div id="controlVeil" class="control-veil" aria-hidden="true">
+    <div class="control-frame" aria-hidden="true"></div>
+    <div class="control-status" aria-live="polite">
+      <span class="control-dot" aria-hidden="true"></span>
+      <span>
+        <strong id="controlTarget">Locus is controlling this surface</strong>
+        <small>Do not touch until control ends.</small>
+      </span>
+    </div>
+    <div id="controlTrail" class="control-trail" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div id="controlCursor" class="control-cursor" aria-hidden="true">
+      <svg viewBox="0 0 32 32" focusable="false">
+        <path d="M5 3 L26 17.4 L16.9 19.2 L12 29 Z"/>
+        <path d="M20.8 4.6 L24.4 1.6"/>
+        <path d="M24.8 10.8 L30 9.2"/>
+        <path d="M15.4 1.2 L15.7 6.4"/>
+      </svg>
     </div>
   </div>
   <div id="voiceOverlay" class="voice-overlay" aria-hidden="true">
@@ -3817,6 +5406,10 @@
     const queryHint = document.getElementById('queryHint');
     const sendBtn = document.getElementById('sendBtn');
     const planModeBtn = document.getElementById('planModeBtn');
+    const learnStepBtn = document.getElementById('learnStepBtn');
+    const intelligenceRange = document.getElementById('intelligenceRange');
+    const intelligenceLabel = document.getElementById('intelligenceLabel');
+    const intelligenceWarning = document.getElementById('intelligenceWarning');
     const answerEl = document.getElementById('answer');
     const sourcesList = document.getElementById('sourcesList');
     const thinkingLog = document.getElementById('thinkingLog');
@@ -3825,6 +5418,8 @@
     const queryWrap = document.getElementById('queryWrap');
     const offlineBanner = document.getElementById('offlineBanner');
     const memoryList = document.getElementById('memoryList');
+    const conversationSummary = document.getElementById('conversationSummary');
+    const conversationList = document.getElementById('conversationList');
     const commandButton = document.getElementById('commandButton');
     const safetyCenterBtn = document.getElementById('safetyCenterBtn');
     const settingsCenterBtn = document.getElementById('settingsCenterBtn');
@@ -3846,6 +5441,10 @@
     const createFileBtn = document.getElementById('createFileBtn');
     const modelMenuBtn = document.getElementById('modelMenuBtn');
     const voiceBtn = document.getElementById('voiceBtn');
+    const controlVeil = document.getElementById('controlVeil');
+    const controlTarget = document.getElementById('controlTarget');
+    const controlCursor = document.getElementById('controlCursor');
+    const controlTrail = document.getElementById('controlTrail');
     const voiceOverlay = document.getElementById('voiceOverlay');
     const voiceStatus = document.getElementById('voiceStatus');
     const voiceNote = document.getElementById('voiceNote');
@@ -3855,6 +5454,9 @@
     const workspaceList = document.getElementById('workspaceList');
     const runList = document.getElementById('runList');
     const maxRamInput = document.getElementById('maxRamInput');
+    const maxComputeInput = document.getElementById('maxComputeInput');
+    const computeCapLabel = document.getElementById('computeCapLabel');
+    const computeCapWarning = document.getElementById('computeCapWarning');
     const saveRamBtn = document.getElementById('saveRamBtn');
     const setupPanel = document.getElementById('setupPanel');
     const setupSummary = document.getElementById('setupSummary');
@@ -3862,10 +5464,16 @@
     const setupWizardTitle = document.getElementById('setupWizardTitle');
     const setupWizardSummary = document.getElementById('setupWizardSummary');
     const setupWizardGrid = document.getElementById('setupWizardGrid');
+    const cmdRehearsal = document.getElementById('cmdRehearsal');
+    const fnRehearsal = document.getElementById('fnRehearsal');
     const setupSteps = document.getElementById('setupSteps');
     const setupLog = document.getElementById('setupLog');
     const setupRunBtn = document.getElementById('setupRunBtn');
     const permissionActions = document.getElementById('permissionActions');
+    const modelDownloadActions = document.getElementById('modelDownloadActions');
+    const modelDownloadEstimate = document.getElementById('modelDownloadEstimate');
+    const approveModelDownloadsBtn = document.getElementById('approveModelDownloadsBtn');
+    const skipModelDownloadsBtn = document.getElementById('skipModelDownloadsBtn');
     const openFullDiskBtn = document.getElementById('openFullDiskBtn');
     const openAccessibilityBtn = document.getElementById('openAccessibilityBtn');
     const checkFullDiskBtn = document.getElementById('checkFullDiskBtn');
@@ -3895,6 +5503,8 @@
     const settingsGrid = document.getElementById('settingsGrid');
     const settingsModels = document.getElementById('settingsModels');
     const placementControl = document.getElementById('placementControl');
+    const usageCapControl = document.getElementById('usageCapControl');
+    const featureGateList = document.getElementById('featureGateList');
     const settingsAutomations = document.getElementById('settingsAutomations');
     const toolApproval = document.getElementById('toolApproval');
     const approvalToolName = document.getElementById('approvalToolName');
@@ -3919,6 +5529,22 @@
     const quickActionButtons = document.querySelectorAll('[data-command]');
     const surfaceMode = new URLSearchParams(location.search).get('surface') || '';
     const setupSurfaceStartedAt = Date.now();
+    const INTELLIGENCE_LEVELS = ['xlow', 'low', 'medium', 'high', 'xhigh', 'max'];
+    const INTELLIGENCE_COPY = {
+      xlow: 'Basic chat and routing on 8 GB machines.',
+      low: 'Fast local help, voice routing, and guided explanations.',
+      medium: 'Browser, uploads, and artifact generation. 16 GB recommended.',
+      high: 'Longer coding and research loops on 16 GB+ systems.',
+      xhigh: 'Deep research chains. 48 GB+ recommended.',
+      max: 'Model council and full local autonomy. 48 GB+ required.'
+    };
+    const MAX_VISIBLE_THINKING_LINES = 56;
+    const THINKING_KEEP_LINES = 28;
+    const MAX_RENDERED_ANSWER_CHARS = 90000;
+
+    if (surfaceMode === 'overlay') {
+      queryInput.placeholder = 'Start a task...';
+    }
 
     let ws = null;
     let answerMarkdown = '';
@@ -3935,9 +5561,17 @@
     let pluginSnapshot = null;
     let toolSnapshot = null;
     let safetySnapshot = null;
+    let conversationSnapshot = null;
+    let thinkingLineCount = 0;
     let pendingToolApproval = null;
     let queuedSocketAction = null;
     let planMode = false;
+    let learnStepByStep = false;
+    let currentIntelligence = 'medium';
+    let currentComputeCap = 90;
+    let shortcutMetaLast = 0;
+    let fnHoldTimer = null;
+    let settingsSaveTimer = null;
     let voiceRecognition = null;
     let voiceActive = false;
     let voiceReplyArmed = false;
@@ -3945,6 +5579,13 @@
     let launchHidden = false;
     let setupLastStatus = null;
     let audioContext = null;
+    let controlActive = false;
+    let controlAnimationFrame = null;
+    let controlStopTimer = null;
+    let controlStartedAt = 0;
+    let controlLastClickAt = 0;
+    let controlPoint = { x: window.innerWidth * 0.52, y: window.innerHeight * 0.5 };
+    let controlTrailPoints = [];
 
     const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const WS_CANDIDATES = [
@@ -4012,6 +5653,24 @@
       thinkingLog.innerHTML = '';
       toolLog.innerHTML = '';
       spinnerNodes = [];
+      thinkingLineCount = 0;
+    }
+
+    function compactThinkingLogIfNeeded() {
+      const lines = Array.from(thinkingLog.querySelectorAll('.thinking-line'));
+      if (lines.length <= MAX_VISIBLE_THINKING_LINES) return;
+      const removeCount = Math.max(0, lines.length - THINKING_KEEP_LINES);
+      lines.slice(0, removeCount).forEach(node => node.remove());
+      spinnerNodes = spinnerNodes.filter(node => node.isConnected);
+      const compacted = document.createElement('div');
+      compacted.className = 'thinking-line compressed';
+      const spinner = document.createElement('span');
+      spinner.className = 'spinner stopped';
+      const content = document.createElement('span');
+      content.textContent = `> ${removeCount} older thinking step(s) compacted locally`;
+      compacted.appendChild(spinner);
+      compacted.appendChild(content);
+      thinkingLog.prepend(compacted);
     }
 
     function addThinkingLine(text) {
@@ -4028,12 +5687,151 @@
       line.appendChild(spinner);
       line.appendChild(content);
       thinkingLog.appendChild(line);
+      thinkingLineCount += 1;
+      compactThinkingLogIfNeeded();
       thinkingLog.scrollTop = thinkingLog.scrollHeight;
     }
 
     function stopSpinners() {
       spinnerNodes.forEach(node => node.classList.add('stopped'));
     }
+
+    function controlToolKind(item) {
+      const plugin = String(item && item.plugin ? item.plugin : '').toLowerCase();
+      const tool = String(item && item.tool ? item.tool : '').toLowerCase();
+      if (plugin === 'browser' && tool !== 'connector_status') return 'browser';
+      if (['computer', 'app_control', 'app-control', 'system_control'].includes(plugin)) return 'computer';
+      if (plugin === 'shell' || plugin === 'system') return 'system';
+      if (tool.includes('read_window_context') || tool.includes('app_context')) return 'computer';
+      return '';
+    }
+
+    function isControlTool(item) {
+      return Boolean(controlToolKind(item));
+    }
+
+    function controlToolLabel(item) {
+      const kind = controlToolKind(item);
+      if (kind === 'browser') return 'Locus is controlling the browser';
+      if (kind === 'computer') return 'Locus is controlling this app';
+      if (kind === 'system') return 'Locus is controlling the system';
+      return 'Locus is controlling this surface';
+    }
+
+    function shouldShowControlClick(item) {
+      const plugin = String(item && item.plugin ? item.plugin : '').toLowerCase();
+      const tool = String(item && item.tool ? item.tool : '').toLowerCase();
+      return plugin === 'browser' && ['click', 'fill', 'open_page'].includes(tool);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function createControlClick(x = controlPoint.x, y = controlPoint.y) {
+      if (!controlVeil) return;
+      const click = document.createElement('span');
+      click.className = 'control-click';
+      click.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      controlVeil.appendChild(click);
+      click.addEventListener('animationend', () => click.remove(), { once: true });
+    }
+
+    function setControlPoint(x, y, options = {}) {
+      const width = Math.max(window.innerWidth || 900, 320);
+      const height = Math.max(window.innerHeight || 620, 320);
+      const next = {
+        x: clamp(Number(x) || width * 0.52, 34, width - 52),
+        y: clamp(Number(y) || height * 0.5, 44, height - 52)
+      };
+      controlPoint = next;
+      if (controlVeil) {
+        controlVeil.style.setProperty('--cursor-x', `${next.x}px`);
+        controlVeil.style.setProperty('--cursor-y', `${next.y}px`);
+      }
+      if (controlCursor) {
+        controlCursor.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
+      }
+      controlTrailPoints.unshift(next);
+      controlTrailPoints = controlTrailPoints.slice(0, 7);
+      if (controlTrail) {
+        Array.from(controlTrail.children).forEach((node, index) => {
+          const point = controlTrailPoints[index] || next;
+          const scale = Math.max(0.35, 1 - index * 0.1);
+          node.style.transform = `translate3d(${point.x + 11}px, ${point.y + 13}px, 0) scale(${scale})`;
+          node.style.opacity = `${Math.max(0, 0.58 - index * 0.075)}`;
+        });
+      }
+      if (options.click) createControlClick(next.x, next.y);
+    }
+
+    function animateControlMotion(now) {
+      if (!controlActive) return;
+      const elapsed = (now - controlStartedAt) / 1000;
+      const width = Math.max(window.innerWidth || 900, 320);
+      const height = Math.max(window.innerHeight || 620, 320);
+      const x = width * (0.52 + 0.28 * Math.sin(elapsed * 1.18)) + Math.sin(elapsed * 3.4) * 22;
+      const y = height * (0.5 + 0.22 * Math.cos(elapsed * 0.88)) + Math.cos(elapsed * 2.1) * 16;
+      setControlPoint(x, y);
+      if (now - controlLastClickAt > 1450 + Math.sin(elapsed) * 260) {
+        controlLastClickAt = now;
+        createControlClick(controlPoint.x, controlPoint.y);
+      }
+      controlAnimationFrame = requestAnimationFrame(animateControlMotion);
+    }
+
+    function startControlVeil(label, item = {}) {
+      if (!controlVeil) return;
+      clearTimeout(controlStopTimer);
+      if (controlTarget) controlTarget.textContent = label || controlToolLabel(item);
+      controlVeil.classList.add('show');
+      controlVeil.setAttribute('aria-hidden', 'false');
+      if (!controlActive) {
+        controlActive = true;
+        controlStartedAt = performance.now();
+        controlLastClickAt = controlStartedAt - 900;
+        controlTrailPoints = [];
+        setControlPoint(window.innerWidth * 0.52, window.innerHeight * 0.52, { click: true });
+        controlAnimationFrame = requestAnimationFrame(animateControlMotion);
+      } else if (shouldShowControlClick(item)) {
+        createControlClick(controlPoint.x, controlPoint.y);
+      }
+    }
+
+    function stopControlVeil(delay = 850) {
+      if (!controlVeil) return;
+      clearTimeout(controlStopTimer);
+      controlStopTimer = setTimeout(() => {
+        controlActive = false;
+        if (controlAnimationFrame) {
+          cancelAnimationFrame(controlAnimationFrame);
+          controlAnimationFrame = null;
+        }
+        controlVeil.classList.remove('show');
+        controlVeil.setAttribute('aria-hidden', 'true');
+      }, delay);
+    }
+
+    function syncControlVeilFromTool(item) {
+      if (!isControlTool(item)) return;
+      const state = String(item.state || (item.ok ? 'done' : 'running')).toLowerCase();
+      if (state === 'running') {
+        startControlVeil(controlToolLabel(item), item);
+        if (shouldShowControlClick(item)) createControlClick(controlPoint.x, controlPoint.y);
+        return;
+      }
+      if (state === 'done' || state === 'error' || state === 'blocked') {
+        if (shouldShowControlClick(item)) createControlClick(controlPoint.x, controlPoint.y);
+        stopControlVeil(state === 'error' ? 1300 : 850);
+      }
+    }
+
+    window.locusControlVeil = {
+      start: (label = 'Locus is controlling this surface') => startControlVeil(label),
+      stop: () => stopControlVeil(120),
+      move: (x, y) => setControlPoint(x, y),
+      click: (x = controlPoint.x, y = controlPoint.y) => createControlClick(x, y)
+    };
 
     function addToolLine(item) {
       const line = document.createElement('div');
@@ -4051,6 +5849,7 @@
       line.appendChild(nameEl);
       toolLog.appendChild(line);
       toolLog.scrollTop = toolLog.scrollHeight;
+      syncControlVeilFromTool({ ...item, state });
     }
 
     function parseToolDirective(text) {
@@ -4096,6 +5895,8 @@
       clearAll();
       setStatus('running');
       addThinkingLine(label || `Running ${plugin}.${tool}`);
+      const controlItem = { plugin, tool, args: args || {}, state: 'running' };
+      if (isControlTool(controlItem)) startControlVeil(controlToolLabel(controlItem), controlItem);
       ws.send(JSON.stringify({ type: 'tool', data: { plugin, tool, args: args || {}, reason: label || '' } }));
     }
 
@@ -4729,6 +6530,124 @@
       autonomyDetail.textContent = detail || '';
     }
 
+    function computeCapMessage(value) {
+      if (value < 75) return ['warning', 'Below 75% can make local models noticeably slower.'];
+      if (value > 90) return ['error', 'Above 90% can cause heat, fan noise, or system instability.'];
+      if (value === 90) return ['', '90% recommended for local model runs.'];
+      return ['', `${value}% cap keeps headroom for macOS and active apps.`];
+    }
+
+    function setComputeCap(value, { syncInput = true, renderUsage = true } = {}) {
+      const cap = clamp(Math.round(Number(value) || 90), 50, 99);
+      currentComputeCap = cap;
+      if (syncInput && maxComputeInput) maxComputeInput.value = String(cap);
+      if (computeCapLabel) computeCapLabel.textContent = `${cap}%`;
+      if (computeCapWarning) {
+        const [state, text] = computeCapMessage(cap);
+        computeCapWarning.className = `compute-warning${state ? ` ${state}` : ''}`;
+        computeCapWarning.textContent = text;
+      }
+      if (renderUsage) renderUsageCapControl(cap);
+      return cap;
+    }
+
+    function intelligenceRequirement(level) {
+      if (level === 'xhigh' || level === 'max') return 48;
+      if (level === 'medium' || level === 'high') return 16;
+      return 8;
+    }
+
+    function setIntelligenceLevel(level, { syncInput = true } = {}) {
+      const value = INTELLIGENCE_LEVELS.includes(level) ? level : 'medium';
+      currentIntelligence = value;
+      const index = INTELLIGENCE_LEVELS.indexOf(value);
+      if (syncInput && intelligenceRange) intelligenceRange.value = String(index);
+      if (intelligenceLabel) intelligenceLabel.textContent = value;
+      if (intelligenceWarning) {
+        const required = intelligenceRequirement(value);
+        const state = required >= 48 ? 'error' : required >= 16 ? 'warning' : '';
+        intelligenceWarning.className = `intelligence-warning${state ? ` ${state}` : ''}`;
+        intelligenceWarning.textContent = INTELLIGENCE_COPY[value] || 'Balanced local tools';
+      }
+      renderFeatureGates();
+      if (typeof updateQueryHint === 'function') updateQueryHint();
+      return value;
+    }
+
+    function setLearnStepByStep(enabled) {
+      learnStepByStep = Boolean(enabled);
+      if (learnStepBtn) {
+        learnStepBtn.classList.toggle('active', learnStepByStep);
+        learnStepBtn.setAttribute('aria-pressed', learnStepByStep ? 'true' : 'false');
+      }
+      try { localStorage.setItem('locus.learnStepByStep', learnStepByStep ? '1' : '0'); } catch (_) {}
+      if (typeof updateQueryHint === 'function') updateQueryHint();
+    }
+
+    function renderUsageCapControl(value = currentComputeCap) {
+      if (!usageCapControl) return;
+      usageCapControl.innerHTML = '';
+      const row = document.createElement('div');
+      row.className = 'usage-row';
+      const label = document.createElement('strong');
+      label.textContent = 'CPU/GPU cap';
+      const input = document.createElement('input');
+      input.className = 'range-slider';
+      input.type = 'range';
+      input.min = '50';
+      input.max = '99';
+      input.step = '1';
+      input.value = String(value);
+      const valueEl = document.createElement('span');
+      valueEl.textContent = `${value}%`;
+      input.addEventListener('input', () => {
+        valueEl.textContent = `${input.value}%`;
+        setComputeCap(Number(input.value), { renderUsage: false });
+        const [state, text] = computeCapMessage(Number(input.value));
+        warning.className = `safety-line${state === 'error' ? ' error' : ''}`;
+        warning.textContent = text;
+        queueSettingsSave();
+      });
+      row.appendChild(label);
+      row.appendChild(input);
+      row.appendChild(valueEl);
+      usageCapControl.appendChild(row);
+      const [state, text] = computeCapMessage(Number(value));
+      const warning = document.createElement('div');
+      warning.className = `safety-line${state === 'error' ? ' error' : ''}`;
+      warning.textContent = text;
+      usageCapControl.appendChild(warning);
+    }
+
+    function renderFeatureGates() {
+      if (!featureGateList) return;
+      const gates = [
+        ['Voice', 'low', 'Default low; can see screen context when enabled.'],
+        ['Browser Control', 'medium', 'Local Playwright actions and scraping.'],
+        ['Uploads & Artifacts', 'medium', 'File upload analysis and code/file creation.'],
+        ['Deep Research', 'xhigh', 'Plan, act, observe, reflect loops.'],
+        ['Model Council', 'max', '3-7 local model debate and synthesis.']
+      ];
+      const currentIndex = INTELLIGENCE_LEVELS.indexOf(currentIntelligence);
+      featureGateList.innerHTML = '';
+      gates.forEach(([name, minLevel, copy]) => {
+        const minIndex = INTELLIGENCE_LEVELS.indexOf(minLevel);
+        const row = document.createElement('div');
+        row.className = 'feature-gate-row';
+        const label = document.createElement('strong');
+        label.textContent = name;
+        const detail = document.createElement('span');
+        detail.textContent = copy;
+        const tag = document.createElement('span');
+        tag.className = 'gate-tag';
+        tag.textContent = currentIndex >= minIndex ? 'unlocked now' : `warn at ${minLevel}`;
+        row.appendChild(label);
+        row.appendChild(detail);
+        row.appendChild(tag);
+        featureGateList.appendChild(row);
+      });
+    }
+
     function renderSafetyCenter(payload) {
       if (payload) safetySnapshot = payload;
       if (!safetySnapshot) {
@@ -4749,8 +6668,8 @@
         ? ` · ${Number(budget.available_ram_gb).toFixed(1)} GB free (${pressure})`
         : '';
       safetyCenterSummary.textContent = runtime.allow_local_models
-        ? `Local models enabled · GPU cap ${Number(budget.gpu_limit_pct || 95).toFixed(0)}%${pressureText}`
-        : `Model-free by default · GPU cap ${Number(budget.gpu_limit_pct || 95).toFixed(0)}%${pressureText}`;
+        ? `Local models enabled · GPU cap ${Number(budget.gpu_limit_pct || 90).toFixed(0)}%${pressureText}`
+        : `Model-free by default · GPU cap ${Number(budget.gpu_limit_pct || 90).toFixed(0)}%${pressureText}`;
       renderAutonomyControl(autonomyMode, plugins.autonomy_detail || '');
 
       safetyPosture.innerHTML = '';
@@ -4943,20 +6862,28 @@
       settingsGrid.appendChild(settingsCard('System', `${osInfo.name || 'Unknown OS'} ${osInfo.version || osInfo.release || ''}`.trim(), runtime.supported_os === false ? 'error' : 'done'));
       settingsGrid.appendChild(settingsCard('Workspace', runtime.workspace_root || 'current folder', runtime.workspace_exists === false ? 'warning' : 'done'));
       settingsGrid.appendChild(settingsCard('Local Models', runtime.allow_local_models ? 'enabled' : 'off unless enabled', runtime.allow_local_models ? 'warning' : 'done'));
+      settingsGrid.appendChild(settingsCard('Model Assets', runtime.auto_install_models ? 'downloads enabled' : 'optional; not required', runtime.auto_install_models ? 'warning' : 'done'));
       settingsGrid.appendChild(settingsCard('External AI', runtime.allow_external_ai ? 'enabled' : 'off', runtime.allow_external_ai ? 'warning' : 'done'));
       settingsGrid.appendChild(settingsCard('Cloud Workers', runtime.allow_cloud_workers ? 'enabled' : 'off', runtime.allow_cloud_workers ? 'warning' : 'done'));
       settingsGrid.appendChild(settingsCard('Max RAM', `${Number(budget.max_ram_gb || 0).toFixed(1)} GB effective`, budget.low_ram_mode ? 'warning' : 'done'));
-      settingsGrid.appendChild(settingsCard('GPU Cap', `${Number(budget.gpu_limit_pct || 95).toFixed(0)}%${budget.os_family === 'macos' ? ' MPS' : ''}`, 'done'));
+      settingsGrid.appendChild(settingsCard('GPU Cap', `${Number(budget.gpu_limit_pct || runtime.max_gpu_percent || 90).toFixed(0)}%${budget.os_family === 'macos' ? ' MPS' : ''}`, 'done'));
+      settingsGrid.appendChild(settingsCard('Intelligence', runtime.intelligence_level || currentIntelligence, 'done'));
+      settingsGrid.appendChild(settingsCard('Learn Step-by-Step', runtime.learn_step_by_step ? 'on' : 'off', runtime.learn_step_by_step ? 'warning' : 'done'));
       settingsGrid.appendChild(settingsCard('Acceleration', acceleration.tier || acceleration.kind || 'local', acceleration.kind === 'cpu' ? 'warning' : 'done'));
 
       const roles = recommendation.roles || {};
       const roleText = Object.entries(roles)
         .map(([role, model]) => `${role}: ${model}`)
         .join(' · ');
-      settingsModels.textContent = roleText || 'Model recommendation unavailable.';
+      settingsModels.textContent = roleText
+        ? `${roleText} · model assets optional until local model mode is enabled`
+        : 'Model recommendation unavailable. The frontend still works without model files.';
       if (voiceRecommendation && voiceRecommendation.transcription) {
         settingsModels.textContent += ` · voice: ${voiceRecommendation.transcription.recommended_model} (${voiceRecommendation.transcription.estimated_ram_gb} GB est.)`;
       }
+      setComputeCap(Number(budget.gpu_limit_pct || runtime.max_gpu_percent || currentComputeCap || 90));
+      setIntelligenceLevel(runtime.intelligence_level || currentIntelligence);
+      setLearnStepByStep(Object.prototype.hasOwnProperty.call(runtime, 'learn_step_by_step') ? Boolean(runtime.learn_step_by_step) : learnStepByStep);
       renderPlacementControl(document.body.dataset.placement || 'center');
       settingsAutomations.textContent = automations.length
         ? `${automations.length} local automation(s) defined.`
@@ -5106,6 +7033,37 @@
       });
     }
 
+    function formatModelGb(value) {
+      if (typeof value !== 'number' || Number.isNaN(value)) return 'unknown';
+      return `${value.toFixed(1)} GB`;
+    }
+
+    function renderModelDownloadActions(status) {
+      const steps = (status && status.steps) || [];
+      const modelStep = steps.find(item => item.id === 'model_downloads') || {};
+      const plan = (status && status.model_download_plan) || modelStep.plan || {};
+      const missingCount = Number(plan.missing_model_count || 0);
+      const missingSize = Number(plan.missing_size_gb || 0);
+      const requiredDisk = Number(plan.required_disk_gb || missingSize || 0);
+      const freeDisk = typeof plan.free_disk_gb === 'number' ? formatModelGb(plan.free_disk_gb) : 'unknown free space';
+      const needsApproval = Boolean(modelStep.action && modelStep.action !== 'none' && modelStep.state !== 'done');
+      const showActions = needsApproval || Boolean(plan.permission_required);
+      modelDownloadActions.classList.toggle('show', showActions);
+      if (!showActions) return;
+      const modelList = Array.isArray(plan.missing_models) && plan.missing_models.length
+        ? plan.missing_models.join(', ')
+        : 'recommended model files';
+      modelDownloadEstimate.textContent =
+        `${missingCount || 'Recommended'} model(s): ${modelList}. ` +
+        `Estimated download ${formatModelGb(missingSize)}, ${formatModelGb(requiredDisk)} with margin, ${freeDisk}.`;
+      const enoughDisk = plan.enough_disk !== false;
+      approveModelDownloadsBtn.disabled = !enoughDisk || Boolean(status && status.running);
+      approveModelDownloadsBtn.textContent = enoughDisk
+        ? `Approve & Download (${formatModelGb(missingSize)})`
+        : 'Not Enough Disk Space';
+      skipModelDownloadsBtn.disabled = Boolean(status && status.running);
+    }
+
     function renderSetupStatus(status) {
       setupLastStatus = status || null;
       const complete = Boolean(status && status.complete);
@@ -5128,6 +7086,7 @@
             : `Locus is ready on ${osName}. ${requiredText}.`
           : `${requiredText}. Setup will install and create what Locus needs.`;
       renderSetupWizard(status || {});
+      renderModelDownloadActions(status || {});
       setupStepMap = new Map();
       ((status && status.steps) || []).forEach(renderSetupStep);
       if (!complete && !runningSetup && ws && ws.readyState === WebSocket.OPEN && !setupAutoStarted) {
@@ -5163,6 +7122,23 @@
       ws.send(JSON.stringify({ type: 'setup', data: { manual: true } }));
     }
 
+    function approveModelDownloads() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      playLocusTone('soft');
+      setupPanel.classList.add('show');
+      setupSummary.textContent = 'Approving model downloads and checking disk space';
+      approveModelDownloadsBtn.disabled = true;
+      skipModelDownloadsBtn.disabled = true;
+      ws.send(JSON.stringify({ type: 'model_downloads', data: { action: 'approve' } }));
+    }
+
+    function skipModelDownloads() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      playLocusTone('soft');
+      setupSummary.textContent = 'Model downloads skipped. You can approve them later from setup.';
+      ws.send(JSON.stringify({ type: 'model_downloads', data: { action: 'skip' } }));
+    }
+
     function requestFullDiskAccess() {
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       closeCommandPalette();
@@ -5192,6 +7168,32 @@
       shortcutToast.textContent = message;
       shortcutToast.classList.add('show');
       shortcutToastTimer = setTimeout(() => shortcutToast.classList.remove('show'), 1100);
+    }
+
+    function markShortcutRehearsal(kind) {
+      const target = kind === 'fn' ? fnRehearsal : cmdRehearsal;
+      if (!target) return;
+      target.classList.add('done');
+      showShortcutToast(kind === 'fn' ? 'fn hold captured' : 'Command shortcut captured');
+    }
+
+    function handleShortcutRehearsalKeyDown(event) {
+      if (event.key === 'Meta') {
+        const now = Date.now();
+        if (now - shortcutMetaLast < 520) markShortcutRehearsal('cmd');
+        shortcutMetaLast = now;
+      }
+      if (event.key === 'Fn' || event.key === 'Function' || event.code === 'Fn') {
+        clearTimeout(fnHoldTimer);
+        fnHoldTimer = setTimeout(() => markShortcutRehearsal('fn'), 380);
+      }
+    }
+
+    function handleShortcutRehearsalKeyUp(event) {
+      if (event.key === 'Fn' || event.key === 'Function' || event.code === 'Fn') {
+        clearTimeout(fnHoldTimer);
+        fnHoldTimer = null;
+      }
     }
 
     function focusLocusFromShortcut() {
@@ -5244,6 +7246,13 @@
     }
 
     function startAppContext() {
+      if (socketOpen()) {
+        startControlVeil('Locus is checking app-control context', {
+          plugin: 'computer',
+          tool: 'read_window_context',
+          state: 'running'
+        });
+      }
       runToolCommand('workspace', 'connector_status', {}, 'Reading available app-control tools');
     }
 
@@ -5279,6 +7288,8 @@
         return;
       }
       playLocusTone('voice');
+      setIntelligenceLevel('low');
+      queueSettingsSave();
       const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const rec = voiceRecommendation && voiceRecommendation.transcription;
       const recText = rec
@@ -5443,7 +7454,13 @@
     }
 
     function renderAnswer() {
-      const rawHtml = renderMarkdown(answerMarkdown || '');
+      let displayMarkdown = answerMarkdown || '';
+      if (displayMarkdown.length > MAX_RENDERED_ANSWER_CHARS) {
+        const head = displayMarkdown.slice(0, 4000);
+        const tail = displayMarkdown.slice(-(MAX_RENDERED_ANSWER_CHARS - 5000));
+        displayMarkdown = `${head}\n\n[Older answer text compacted for display. The full turn is saved in local conversation history.]\n\n${tail}`;
+      }
+      const rawHtml = renderMarkdown(displayMarkdown);
       const withCitations = rawHtml.replace(/\[(\d+)\]/g, (_, id) => {
         return `<sup class="citation"><a href="#source-${id}" data-source-link="${id}">[${id}]</a></sup>`;
       });
@@ -5504,6 +7521,7 @@
     function onDone(meta) {
       stopSpinners();
       setStatus('idle');
+      stopControlVeil();
       if (meta && typeof meta.elapsed_ms === 'number') {
         const runSuffix = meta.run_id ? `, run #${meta.run_id}` : '';
         addThinkingLine(`Done in ${meta.elapsed_ms} ms using ${meta.sources_used || 0} sources${runSuffix}`);
@@ -5512,6 +7530,56 @@
       speakBack(answerMarkdown);
       playLocusTone('done');
       loadRunHistory();
+      loadConversationHistory();
+    }
+
+    function renderConversation(snapshot) {
+      conversationSnapshot = snapshot || {};
+      const context = conversationSnapshot.context || {};
+      const sessions = conversationSnapshot.sessions || [];
+      const messageCount = Number(context.message_count || 0);
+      const activeCount = Number(context.active_message_count || 0);
+      const contextCount = Number(context.context_message_count || activeCount);
+      const tokenCount = Number(context.estimated_context_tokens || 0);
+      const compressed = Boolean(context.compression_active);
+      if (!messageCount) {
+        conversationSummary.textContent = 'No conversation yet. Long chats compact automatically.';
+      } else {
+        conversationSummary.innerHTML = `
+          <div>${messageCount} message(s) saved locally. ${contextCount} in active context.</div>
+          <span class="context-pill">${compressed ? 'compressed' : 'recent'} · ${tokenCount} tokens</span>
+        `;
+      }
+      conversationList.innerHTML = '';
+      sessions.slice(0, 10).forEach(item => {
+        const row = document.createElement('button');
+        row.className = 'conversation-chip';
+        row.type = 'button';
+        row.innerHTML = `
+          <div class="conversation-title">${escapeHtml(item.title || item.last_user || 'Conversation')}</div>
+          <div class="conversation-meta">${escapeHtml(item.last_user || 'No user turn yet')}</div>
+          <div class="conversation-meta">${escapeHtml(item.compression_active ? 'Compressed context active' : `${item.message_count || 0} message(s)`)}</div>
+        `;
+        row.addEventListener('click', () => {
+          queryInput.value = item.last_user || item.title || '';
+          answerMarkdown = item.last_answer_preview || item.summary_preview || '';
+          renderAnswer();
+          addThinkingLine(`Loaded local conversation #${item.id}`);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'conversation_load', data: { session_id: item.id } }));
+          }
+        });
+        conversationList.appendChild(row);
+      });
+    }
+
+    async function loadConversationHistory() {
+      try {
+        const payload = await fetch('/api/conversation').then(res => res.json());
+        renderConversation(payload);
+      } catch (_) {
+        renderConversation({ sessions: [], context: {} });
+      }
     }
 
     function renderMemory(items) {
@@ -5584,7 +7652,7 @@
         ? ` · free now ${Number(budget.available_ram_gb).toFixed(1)} GB (${budget.memory_pressure || 'unknown'})`
         : '';
       const ram = rec.hardware && typeof rec.hardware.ram_gb === 'number'
-        ? `${rec.hardware.ram_gb.toFixed(1)} GB RAM · ${maxLabel} · GPU cap ${Number(budget.gpu_limit_pct || 95).toFixed(0)}% · ${acceleration.tier || acceleration.kind || 'local'}${availableLabel}`
+        ? `${rec.hardware.ram_gb.toFixed(1)} GB RAM · ${maxLabel} · GPU cap ${Number(budget.gpu_limit_pct || 90).toFixed(0)}% · ${acceleration.tier || acceleration.kind || 'local'}${availableLabel}`
         : 'hardware detected';
       if (consoleModelTier) consoleModelTier.textContent = rec.tier || 'recommended';
       if (consoleAcceleration) consoleAcceleration.textContent = acceleration.tier || acceleration.kind || 'local acceleration';
@@ -5597,14 +7665,34 @@
         const pressure = budget.memory_pressure ? ` · ${budget.memory_pressure}` : '';
         const available = typeof budget.available_ram_gb === 'number'
           ? `${Number(budget.available_ram_gb).toFixed(1)} GB free`
-          : `GPU cap ${Number(budget.gpu_limit_pct || 95).toFixed(0)}%`;
+          : `GPU cap ${Number(budget.gpu_limit_pct || 90).toFixed(0)}%`;
         consoleBudgetMeta.textContent = `${available}${pressure}`;
       }
       tier.innerHTML = `
           <div class="row-title">Best fit: ${rec.tier || 'recommended'}</div>
-        <div class="row-meta">${ram}</div>
+        <div class="row-meta">${ram} · model files optional</div>
       `;
       modelList.appendChild(tier);
+
+      const assetRow = document.createElement('div');
+      assetRow.className = 'model-row';
+      assetRow.innerHTML = `
+        <div class="row-title">Frontend readiness</div>
+        <div class="row-meta">Dashboard, setup, plugins, uploads, browser control, and history work without downloaded models.</div>
+      `;
+      modelList.appendChild(assetRow);
+
+      const pullPlan = Array.isArray(rec.pull_plan) ? rec.pull_plan : [];
+      if (pullPlan.length) {
+        const totalSize = pullPlan.reduce((sum, item) => sum + Number(item.approx_size_gb || 0), 0);
+        const downloadRow = document.createElement('div');
+        downloadRow.className = 'model-row';
+        downloadRow.innerHTML = `
+          <div class="row-title">Download plan</div>
+          <div class="row-meta">${pullPlan.length} model file(s) · ~${totalSize.toFixed(1)} GB · Locus asks permission before pulling.</div>
+        `;
+        modelList.appendChild(downloadRow);
+      }
 
       Object.entries(rec.roles).slice(0, 5).forEach(([role, model]) => {
         const row = document.createElement('div');
@@ -5725,7 +7813,10 @@
         }
         if (workspacePath && runtime.workspace_root) workspacePath.textContent = runtime.workspace_root;
         maxRamInput.value = runtime.max_ram_gb || '';
-        const gpuCap = Number(budget.gpu_limit_pct || runtime.max_gpu_percent || 95);
+        const gpuCap = Number(budget.gpu_limit_pct || runtime.max_gpu_percent || 90);
+        setComputeCap(gpuCap);
+        setIntelligenceLevel(runtime.intelligence_level || currentIntelligence);
+        setLearnStepByStep(Object.prototype.hasOwnProperty.call(runtime, 'learn_step_by_step') ? Boolean(runtime.learn_step_by_step) : learnStepByStep);
         if (consoleBudget) {
           consoleBudget.textContent = budget.max_ram_gb
             ? `${Number(budget.max_ram_gb).toFixed(1)} GB max`
@@ -5784,14 +7875,21 @@
       await loadRunHistory();
     }
 
+    function updateQueryHint() {
+      if (planMode) {
+        queryHint.textContent = 'Plan Mode is on: Locus will show local tool steps without executing them.';
+        return;
+      }
+      const learn = learnStepByStep ? ' · Learn Step-by-Step on' : '';
+      queryHint.textContent = `Local models stay off unless you enable them. Intelligence: ${currentIntelligence}${learn}.`;
+    }
+
     function setPlanMode(enabled) {
       planMode = Boolean(enabled);
       planModeBtn.classList.toggle('active', planMode);
       planModeBtn.setAttribute('aria-pressed', planMode ? 'true' : 'false');
       if (consolePlanState) consolePlanState.textContent = planMode ? 'Plan only' : 'Ready';
-      queryHint.textContent = planMode
-        ? 'Plan Mode is on: Locus will show local tool steps without executing them.'
-        : 'Local models stay off unless you enable them.';
+      updateQueryHint();
     }
 
     function sendQuery(q, options = {}) {
@@ -5810,7 +7908,16 @@
       setStatus('running');
       const planOnly = options.planOnly !== undefined ? Boolean(options.planOnly) : planMode;
       addThinkingLine(planOnly ? 'Starting plan-only local session' : 'Starting local session');
-      ws.send(JSON.stringify({ type: 'query', data: { query, uploads: uploadedFiles, plan_only: planOnly } }));
+      ws.send(JSON.stringify({
+        type: 'query',
+        data: {
+          query,
+          uploads: uploadedFiles,
+          plan_only: planOnly,
+          intelligence_level: currentIntelligence,
+          learn_step_by_step: learnStepByStep
+        }
+      }));
     }
 
     function readFileAsPayload(file) {
@@ -5839,11 +7946,33 @@
       input.value = '';
     }
 
-    function saveRamBudget() {
+    function currentSettingsPayload() {
+      const raw = maxRamInput.value.trim();
+      return {
+        max_ram_gb: raw ? Number(raw) : null,
+        max_gpu_percent: currentComputeCap,
+        intelligence_level: currentIntelligence,
+        learn_step_by_step: learnStepByStep
+      };
+    }
+
+    function sendSettingsUpdate({ announce = false } = {}) {
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       const raw = maxRamInput.value.trim();
-      ws.send(JSON.stringify({ type: 'settings', data: { max_ram_gb: raw ? Number(raw) : null } }));
-      addThinkingLine(raw ? `Set max RAM budget to ${raw} GB` : 'Reset max RAM budget to automatic');
+      const cap = setComputeCap(maxComputeInput ? maxComputeInput.value : currentComputeCap);
+      ws.send(JSON.stringify({ type: 'settings', data: currentSettingsPayload() }));
+      if (announce) {
+        addThinkingLine(raw ? `Set max RAM budget to ${raw} GB and compute cap to ${cap}%` : `Reset RAM budget to automatic and set compute cap to ${cap}%`);
+      }
+    }
+
+    function queueSettingsSave() {
+      clearTimeout(settingsSaveTimer);
+      settingsSaveTimer = setTimeout(() => sendSettingsUpdate(), 420);
+    }
+
+    function saveRamBudget() {
+      sendSettingsUpdate({ announce: true });
     }
 
     function connectSocket(index = 0) {
@@ -5873,6 +8002,7 @@
           addThinkingLine(`Approval required for ${data.plugin || 'plugin'}.${data.tool || 'tool'}`);
           stopSpinners();
           setStatus('idle');
+          stopControlVeil(120);
           showToolApproval(data);
         }
         if (msg.type === 'tool_audit') {
@@ -5882,6 +8012,26 @@
         }
         if (msg.type === 'done') onDone(msg.data || {});
         if (msg.type === 'memory') renderMemory(msg.data || []);
+        if (msg.type === 'conversation') renderConversation(msg.data || {});
+        if (msg.type === 'conversation_compacted') {
+          const data = msg.data || {};
+          addThinkingLine(data.compressed_now ? 'Conversation compacted locally' : (data.reason || 'Conversation already compact'));
+          if (data.context) renderConversation({ sessions: (conversationSnapshot && conversationSnapshot.sessions) || [], context: data.context });
+          stopSpinners();
+        }
+        if (msg.type === 'conversation_session') {
+          const data = msg.data || {};
+          if (data.ok && Array.isArray(data.messages)) {
+            const lastAssistant = [...data.messages].reverse().find(item => item.role === 'assistant');
+            if (lastAssistant && lastAssistant.content) {
+              answerMarkdown = lastAssistant.content;
+              renderAnswer();
+            }
+            addThinkingLine(`Loaded ${data.messages.length} local history message(s)`);
+          } else if (data.error) {
+            addThinkingLine(`History load failed: ${data.error}`);
+          }
+        }
         if (msg.type === 'upload') {
           const items = msg.data || [];
           renderUploads([...uploadedFiles, ...items.filter(item => item.ok)]);
@@ -5891,7 +8041,12 @@
         if (msg.type === 'settings') {
           const data = msg.data || {};
           if (data.recommendation) renderModelRecommendation(data.recommendation);
-          if (data.runtime) maxRamInput.value = data.runtime.max_ram_gb || '';
+          if (data.runtime) {
+            maxRamInput.value = data.runtime.max_ram_gb || '';
+            setComputeCap(data.runtime.max_gpu_percent || currentComputeCap);
+            setIntelligenceLevel(data.runtime.intelligence_level || currentIntelligence);
+            setLearnStepByStep(Object.prototype.hasOwnProperty.call(data.runtime, 'learn_step_by_step') ? Boolean(data.runtime.learn_step_by_step) : learnStepByStep);
+          }
           addThinkingLine('Settings saved');
           stopSpinners();
         }
@@ -5949,6 +8104,18 @@
           setupRunBtn.textContent = 'Try Again';
           setupSummary.textContent = msg.data && msg.data.error ? msg.data.error : 'Setup failed';
         }
+        if (msg.type === 'model_downloads') {
+          const data = msg.data || {};
+          if (data.ok) {
+            setupSummary.textContent = data.action === 'skip'
+              ? 'Model downloads skipped. The app remains ready in model-free mode.'
+              : 'Model downloads approved. Locus is starting the local download setup.';
+          } else {
+            setupSummary.textContent = data.error || 'Model download approval failed';
+            approveModelDownloadsBtn.disabled = false;
+            skipModelDownloadsBtn.disabled = false;
+          }
+        }
         if (msg.type === 'permission') {
           const data = msg.data || {};
           if ((data.action === 'open_full_disk_access' || data.action === 'open_accessibility') && data.detail) {
@@ -5979,6 +8146,7 @@
 
       ws.onclose = () => {
         setStatus('error');
+        stopControlVeil(120);
         offlineBanner.classList.add('show');
         const next = (index + 1) % WS_CANDIDATES.length;
         setTimeout(() => connectSocket(next), 1800);
@@ -5986,11 +8154,27 @@
 
       ws.onerror = () => {
         setStatus('error');
+        stopControlVeil(120);
       };
     }
 
     sendBtn.addEventListener('click', () => sendQuery());
     planModeBtn.addEventListener('click', () => setPlanMode(!planMode));
+    learnStepBtn.addEventListener('click', () => {
+      setLearnStepByStep(!learnStepByStep);
+      queueSettingsSave();
+    });
+    intelligenceRange.addEventListener('input', () => {
+      const index = clamp(Number(intelligenceRange.value), 0, INTELLIGENCE_LEVELS.length - 1);
+      setIntelligenceLevel(INTELLIGENCE_LEVELS[index]);
+      queueSettingsSave();
+    });
+    maxComputeInput.addEventListener('input', () => {
+      setComputeCap(maxComputeInput.value, { renderUsage: false });
+      queueSettingsSave();
+    });
+    document.addEventListener('keydown', handleShortcutRehearsalKeyDown);
+    document.addEventListener('keyup', handleShortcutRehearsalKeyUp);
     uploadBtn.addEventListener('click', () => fileInput.click());
     filesBtn.addEventListener('click', () => fileInput.click());
     clipBtn.addEventListener('click', () => fileInput.click());
@@ -6005,6 +8189,8 @@
     folderInput.addEventListener('change', () => uploadSelectedFiles(folderInput));
     saveRamBtn.addEventListener('click', saveRamBudget);
     setupRunBtn.addEventListener('click', runSetup);
+    approveModelDownloadsBtn.addEventListener('click', approveModelDownloads);
+    skipModelDownloadsBtn.addEventListener('click', skipModelDownloads);
     consoleSetupBtn.addEventListener('click', openSetupSurface);
     quickActionButtons.forEach(button => {
       button.addEventListener('click', () => runCommandById(button.dataset.command || ''));
@@ -6143,9 +8329,12 @@
     if (surfaceMode) document.body.classList.add(`surface-${surfaceMode}`);
     try {
       document.body.dataset.placement = localStorage.getItem('locus.surfacePlacement') || 'center';
+      setLearnStepByStep(localStorage.getItem('locus.learnStepByStep') === '1');
     } catch (_) {
       document.body.dataset.placement = 'center';
     }
+    setComputeCap(currentComputeCap);
+    setIntelligenceLevel(currentIntelligence);
     if (surfaceMode === 'launch' || surfaceMode === 'setup') {
       launchVeil.style.display = 'grid';
       if (surfaceMode === 'setup') {
@@ -6178,6 +8367,7 @@
     window.locusShouldPoof = locusShouldPoof;
     window.locusSetupShouldClose = locusSetupShouldClose;
     loadStatusPanels();
+    loadConversationHistory();
     connectSocket();
   </script>
 </body>

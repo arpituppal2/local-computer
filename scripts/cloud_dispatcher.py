@@ -18,8 +18,8 @@ from scripts.runtime_policy import cloud_workers_allowed
 
 _MODELS = effective_models_config()
 
-MODEL_PLANNER = _MODELS.get("planner", "qwen3:8b")
-MODEL_HEAVY  = _MODELS.get("heavy", "qwen3:8b")
+MODEL_PLANNER = _MODELS.get("planner", "qwen2.5:14b")
+MODEL_HEAVY  = _MODELS.get("heavy", "qwen2.5:14b")
 
 # Free cloud platforms for hosting stateless subagent workers
 CLOUD_PLATFORMS = {

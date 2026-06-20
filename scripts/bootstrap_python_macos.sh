@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if command -v python3 >/dev/null 2>&1; then
+if command -v python3 >/dev/null 2>&1 && python3 - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 12) else 1)
+PY
+then
   exit 0
 fi
 
 if [ "${LOCAL_COMPUTER_AUTO_INSTALL_PYTHON:-1}" = "0" ]; then
-  echo "[python] Python 3 is required. Install Python 3.11+ and run Locus again."
+  echo "[python] Python 3.12+ is required. Install Python and run Locus again."
   exit 1
 fi
 
@@ -15,7 +19,7 @@ if [ "$(uname -s)" != "Darwin" ]; then
   exit 1
 fi
 
-echo "[python] Python 3 was not found. Installing it automatically for Locus."
+echo "[python] Python 3.12+ was not found. Installing it automatically for Locus."
 
 if ! command -v brew >/dev/null 2>&1; then
   echo "[python] Homebrew was not found. Installing Homebrew first."
@@ -31,8 +35,12 @@ fi
 brew update
 brew install python
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "[python] Python installation finished, but python3 is still not on PATH."
+if ! command -v python3 >/dev/null 2>&1 || ! python3 - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 12) else 1)
+PY
+then
+  echo "[python] Python installation finished, but Python 3.12+ is still not on PATH."
   exit 1
 fi
 

@@ -15,6 +15,66 @@ local Ollama only when you explicitly enable models.
 
 ---
 
+## Quick Start
+
+```bash
+git clone https://github.com/arpituppal2/Locus.git
+cd Locus
+chmod +x run.sh run_dashboard.sh run_app.sh open_dashboard.sh
+./run_dashboard.sh
+```
+
+Open the printed localhost URL, or in another terminal run:
+
+```bash
+./open_dashboard.sh
+```
+
+This launches the full frontend in model-free mode. No Ollama service is
+started, no model files are downloaded, and no local inference runs unless you
+explicitly opt in.
+
+For the native macOS menu-bar app:
+
+```bash
+./install_dock_app.sh
+open ~/Applications/Locus.app
+```
+
+Run a model-free workspace task:
+
+```bash
+./run.sh "show plugin status"
+./run.sh "show model recommendation"
+./run.sh "what is this repo"
+```
+
+Enable local model mode only after setup and model downloads are complete:
+
+```bash
+./run.sh --allow-models "summarize this repo and propose next steps"
+```
+
+Verify a checkout before shipping:
+
+```bash
+LOCAL_COMPUTER_ALLOW_MODELS=0 \
+LOCAL_COMPUTER_SKIP_MODEL_VALIDATE=1 \
+LOCAL_COMPUTER_AUTO_INSTALL_MODELS=0 \
+LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA=0 \
+python scripts/release_check.py
+```
+
+## What Works Before Models
+
+- setup wizard, permissions checklist, and hardware detection
+- dashboard, floating command surface, Settings, Safety Center, and Plugin Center
+- plugin diagnostics, repo inspection, local files, shell-safe commands, git status, uploads, memory, conversation history, and automations
+- browser-control surfaces and local Playwright checks
+- hardware-aware model recommendations and warnings without downloading model files
+
+---
+
 ## Architecture
 
 ```
@@ -37,7 +97,7 @@ run.sh "goal"
                  └─ scripts/event_logger.py → outputs/agent_events.jsonl
 
 run_dashboard.sh
-  └─ scripts/ui_server.py          ← dashboard + websocket at http://localhost:8765
+  └─ scripts/ui_server.py          ← dashboard + websocket on a free localhost port
        └─ dashboard/index.html     ← live agent view
 
 run_app.sh
@@ -53,25 +113,30 @@ run_app.sh
 bootstrap automatically:
 
 - detect macOS or Windows and choose OS-specific safety defaults
-- install Python automatically when it is missing
+- install Python 3.12+ automatically when it is missing or too old
 - create `.venv`
 - install `requirements.txt`
 - install Playwright Chromium
-- install Ollama when recommended model downloads are enabled
-- download the recommended local model files
+- recommend the right local models for the machine
+- show the recommended model bundle, disk-space estimate, and free-space check
+- ask before downloading model files, then pull every recommended Ollama model automatically
 - start the dashboard
 
 When the dashboard opens for the first time, it runs the remaining setup as a
 system-style setup wizard and streams each step: folder creation, plugin
-registry checks, hardware model recommendation, model downloads, workspace
+registry checks, hardware model recommendation, permissioned model assets, workspace
 indexing, safety limits, Full Disk Access status, and Accessibility status for
-global shortcuts. Downloading models pulls model files only; Locus still does
-not run inference until local model mode is explicitly enabled.
+global shortcuts. The frontend, setup, plugins, uploads, browser control, and
+history work before Ollama or any model file exists. Downloading models requires
+approval in the setup overlay; Locus shows the total download size, safety
+margin, available disk space, and exact model list first. Downloading models
+pulls model files only; Locus still does not run inference until local model
+mode is explicitly enabled.
 
 Automatic Python setup uses Homebrew on macOS and `winget` on Windows. Automatic
-Ollama setup uses `brew install --cask ollama` on macOS and `winget install
-Ollama.Ollama` on Windows. To disable automatic model/Ollama downloads for a
-test run:
+Ollama setup is off until the user approves model downloads. After approval, it
+uses `brew install --cask ollama` on macOS and `winget install Ollama.Ollama` on
+Windows when Ollama is missing. To explicitly keep a test run model-asset free:
 
 ```bash
 LOCAL_COMPUTER_AUTO_INSTALL_MODELS=0 LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA=0 ./run.sh
@@ -79,6 +144,20 @@ LOCAL_COMPUTER_AUTO_INSTALL_MODELS=0 LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA=0 ./run.
 
 ```powershell
 $env:LOCAL_COMPUTER_AUTO_INSTALL_MODELS="0"; $env:LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA="0"; .\run.ps1
+```
+
+To review the space estimate from a terminal without downloading anything:
+
+```bash
+python scripts/setup_manager.py --model-download-plan
+```
+
+To approve downloads from a terminal, then let setup pull the recommended
+models:
+
+```bash
+python scripts/setup_manager.py --approve-model-downloads
+python scripts/setup_manager.py --app-setup
 ```
 
 On macOS, `install_dock_app.sh` builds `~/Applications/Locus.app` as a menu-bar
@@ -93,9 +172,10 @@ plain-language progress, uses local Apple system fonts, and avoids
 command-line-only instructions during normal use.
 
 Resource warning: it is highly recommended not to use other apps while Locus is
-running. Local GPU usage is capped at 95% through the legacy
-`LOCAL_COMPUTER_MAX_GPU_PERCENT=95` setting; on macOS, Locus also sets
-`PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.95`. RAM/model caps are applied separately
+running. Local GPU/CPU pressure defaults to a 90% cap through
+`LOCAL_COMPUTER_MAX_GPU_PERCENT=90`; the in-app Settings slider can move that
+between 50% and 99% with warnings below 75% or above 90%. On macOS, Locus also
+sets `PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.90`. RAM/model caps are applied separately
 from the detected OS profile.
 
 You can rerun the setup checks from the terminal:
@@ -125,14 +205,25 @@ warnings in one place.
 The Plugin Center shows every local plugin, connector readiness, declared tools,
 implemented tools, and risk labels. Plugin enable/disable state is persisted in
 `configs/plugins.json`.
+Base cloud connector stubs live in `configs/cloud_connectors.json`, but network
+use stays off until credentials are configured and a network tool is approved.
+Browser-login workflows may be shown as available, but they are not treated as
+configured credentials and still require explicit approval before network use.
+
+Launchers choose the first free localhost port starting at `8765` and export it
+as `LOCAL_COMPUTER_PORT`, so Locus no longer kills unrelated processes that are
+already using the default port. Override the host or preferred port with:
+
+```bash
+LOCAL_COMPUTER_HOST=127.0.0.1 LOCAL_COMPUTER_PORT=8899 ./run_dashboard.sh
+```
 
 ## App Icons
 
 The committed Locus icon set lives under `assets/icons/`. The source artwork is
-a neutral glass lotus mark made from layered petal shapes for a macOS-style
-system identity.
+a dark glass, blue-and-gold orbital mark for a native Dock/menu-bar identity.
 
-- `assets/icons/locus-app-icon.svg` is the editable source artwork.
+- `assets/icons/locus-app-icon-source.png` is the canonical source artwork.
 - `assets/icons/locus-app-icon-1024.png` is the high-resolution preview/export.
 - `assets/icons/macos/Locus.icns` is used by `install_dock_app.sh`.
 - `assets/icons/windows/Locus.ico` is used by `install_windows_shortcut.ps1`.
@@ -157,9 +248,11 @@ python scripts/generate_app_icons.py
 ## Model Routing
 
 Run `python scripts/model_selector.py` to recommend models for the current OS,
-CPU, GPU, VRAM, and RAM. The selector itself prints download commands only; the
-first-run setup wizard can use that recommendation to pull the model files
-automatically.
+CPU, GPU, VRAM, and RAM. The selector itself prints download commands only. The
+first-run setup wizard turns that recommendation into a permissioned download
+plan with total size, missing model size, safety margin, and free disk space.
+After approval, setup pulls every recommended model automatically through
+Ollama.
 
 The selector is conservative on Apple Silicon unified memory and slightly more
 reserved on Windows so the OS, browser automation, and app plugins keep room to
@@ -167,9 +260,15 @@ breathe:
 
 | Installed RAM | Default local behavior |
 |---------------|------------------------|
-| 8 GB | tiny models, 2048 context, one loaded model, plugin-first routing |
-| 12-16 GB | 1.7B/4B control models, one local job, bounded browser tabs |
-| 24 GB+ | larger synthesis/heavy roles only when the RAM budget allows it |
+| 8 GB | xlow/low routing with `qwen2.5:3b`, 2048 context, one loaded model, plugin-first fallback |
+| 16 GB | medium/high routing with `qwen2.5:14b` for planning/synthesis and `qwen2.5:3b` for fast tools |
+| 48 GB+ | xhigh/max mode can recommend `llama3.1:70b` for deep research and model council |
+
+The dashboard exposes an Intelligence slider (`xlow` through `max`) and a
+Learn Step-by-Step toggle. Browser control, uploads, and artifact generation are
+recommended at medium or higher; Deep Research is xhigh, and Model Council is
+max. Users can override any Ollama model, but Locus warns when the selected
+model exceeds the comfortable RAM budget.
 
 Recommendations also check current available RAM and Windows NVIDIA VRAM. If the
 machine is already under memory pressure, or if an RTX laptop has limited VRAM,
@@ -215,10 +314,12 @@ Current built-ins:
 - `shell` for local command execution
 - `git` for repository inspection
 - `github` for `gh`/token-backed GitHub workflows
+- `google_drive` for Drive/Docs/Sheets connector readiness stubs
 - `email` for IMAP/SMTP or browser-backed email workflows
 - `browser` for Playwright web automation
 - `uploads` for dashboard file uploads
 - `memory` for local query history
+- conversation history is stored locally with automatic deterministic context compression for long chats and thinking traces
 - `workspace` for repo indexing, project briefing, health reports, TODO reports, and run history
 - `automations` for local scheduled Locus task definitions and due-task execution
 
@@ -255,6 +356,20 @@ Run the local acceptance suite without starting models:
 ```bash
 LOCAL_COMPUTER_ALLOW_MODELS=0 LOCAL_COMPUTER_SKIP_MODEL_VALIDATE=1 python scripts/locus_acceptance.py
 ```
+
+Run the production release gate without starting models:
+
+```bash
+LOCAL_COMPUTER_ALLOW_MODELS=0 \
+LOCAL_COMPUTER_SKIP_MODEL_VALIDATE=1 \
+LOCAL_COMPUTER_AUTO_INSTALL_MODELS=0 \
+LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA=0 \
+python scripts/release_check.py
+```
+
+The release gate validates JSON configs, plugin manifests, connector defaults,
+the model matrix, shell/model launch safety, dashboard JavaScript, Python
+compilation, committed app icons, and the local no-model acceptance harness.
 
 Natural model-free requests also route to tools:
 
@@ -301,9 +416,12 @@ mode.
 ### Pull the local models
 
 ```bash
-python scripts/model_selector.py
-# Then pull only the models printed in the download plan.
-# Nothing is downloaded unless you run ollama pull or pass --pull.
+python scripts/setup_manager.py --model-download-plan
+# Review the exact model list, total GB, safety margin, and free disk space.
+
+python scripts/setup_manager.py --approve-model-downloads
+python scripts/setup_manager.py --app-setup
+# Setup installs/starts Ollama if enabled and pulls every recommended model.
 ```
 
 ---
@@ -330,8 +448,8 @@ python scripts/model_selector.py
 
 ## Requirements
 
-- macOS on Apple Silicon; 8 GB RAM is supported with the safe tier
-- Python 3.11+
+- macOS on Apple Silicon or Windows; 8 GB RAM is supported with the safe tier
+- Python 3.12+
 - [Ollama](https://ollama.com) only when `--allow-models` is used
 - Playwright Chromium (auto-installed by `run.sh`)
 
@@ -351,11 +469,14 @@ Locus/
 ├── scripts/
 │   ├── hardware_profile.py     ← CPU/GPU/RAM detection
 │   ├── setup_manager.py        ← first-run setup checks and installers
+│   ├── release_check.py        ← no-model production readiness gate
+│   ├── networking.py           ← safe free-port selection
 │   ├── model_selector.py       ← safe model recommendation and pull plan
 │   ├── plugin_manager.py       ← plugin registry + connector status
 │   ├── plugin_runtime.py       ← executable built-in plugin tools
 │   ├── workspace_index.py      ← durable repo index + project briefing
 │   ├── run_history.py          ← persistent per-workspace run history
+│   ├── conversation_history.py ← local chat turns + automatic context compression
 │   ├── workspace_planner.py    ← deterministic model-free tool planner
 │   ├── workspace_agent.py      ← model-free workspace fallback
 │   ├── upload_store.py         ← dashboard file upload storage

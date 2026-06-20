@@ -22,6 +22,7 @@ RUNTIME_PATH = ROOT / "configs" / "runtime.json"
 
 TRUTHY = {"1", "true", "yes", "on", "allow", "enabled"}
 FALSY = {"0", "false", "no", "off", "deny", "disabled"}
+INTELLIGENCE_LEVELS = {"xlow", "low", "medium", "high", "xhigh", "max"}
 
 
 def _load_runtime() -> dict[str, Any]:
@@ -93,14 +94,14 @@ def auto_install_ollama() -> bool:
     env_value = env_flag("LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA")
     if env_value is not None:
         return env_value
-    return bool(_load_runtime().get("auto_install_ollama", True))
+    return bool(_load_runtime().get("auto_install_ollama", False))
 
 
 def auto_install_models() -> bool:
     env_value = env_flag("LOCAL_COMPUTER_AUTO_INSTALL_MODELS")
     if env_value is not None:
         return env_value
-    return bool(_load_runtime().get("auto_install_models", True))
+    return bool(_load_runtime().get("auto_install_models", False))
 
 
 def max_ram_gb() -> float | None:
@@ -118,12 +119,27 @@ def max_ram_gb() -> float | None:
 def max_gpu_percent() -> float:
     raw = os.getenv("LOCAL_COMPUTER_MAX_GPU_PERCENT")
     if raw is None:
-        raw = _load_runtime().get("max_gpu_percent", 95)
+        raw = _load_runtime().get("max_gpu_percent", 90)
     try:
         value = float(raw)
     except (TypeError, ValueError):
-        value = 95.0
-    return max(1.0, min(95.0, value))
+        value = 90.0
+    return max(50.0, min(99.0, value))
+
+
+def intelligence_level() -> str:
+    raw = os.getenv("LOCAL_COMPUTER_INTELLIGENCE_LEVEL")
+    if raw is None:
+        raw = _load_runtime().get("intelligence_level", "medium")
+    value = str(raw or "medium").strip().lower()
+    return value if value in INTELLIGENCE_LEVELS else "medium"
+
+
+def learn_step_by_step() -> bool:
+    env_value = env_flag("LOCAL_COMPUTER_LEARN_STEP_BY_STEP")
+    if env_value is not None:
+        return env_value
+    return bool(_load_runtime().get("learn_step_by_step", False))
 
 
 def skip_model_validation() -> bool:
@@ -157,6 +173,8 @@ def runtime_summary() -> dict[str, Any]:
         "auto_install_models": auto_install_models(),
         "max_ram_gb": max_ram_gb(),
         "max_gpu_percent": max_gpu_percent(),
+        "intelligence_level": intelligence_level(),
+        "learn_step_by_step": learn_step_by_step(),
         "skip_model_validation": skip_model_validation(),
         "workspace_root": str(workspace),
         "workspace_exists": workspace.exists(),

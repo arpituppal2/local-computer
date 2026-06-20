@@ -8,6 +8,7 @@ import json
 import logging
 import math
 import mimetypes
+import os
 import sys
 from dataclasses import asdict
 from http import HTTPStatus
@@ -22,13 +23,16 @@ from websockets.exceptions import ConnectionClosed
 from websockets.server import WebSocketServerProtocol, serve
 
 from scripts.model_selector import recommend_models
+from scripts.conversation_history import force_compress_session, get_conversation_snapshot, get_context_bundle, get_session, store_turn
 from scripts.plugin_manager import autonomy_mode_detail, registry_snapshot, set_autonomy_mode, set_plugin_enabled, set_tool_policy
 from scripts.plugin_runtime import classify_shell_command, execute_tool, preview_tool, render_tool_result, tool_catalog, tool_metadata
 from scripts.resource_policy import resource_budget
 from scripts.run_history import list_runs, list_tool_events, store_run, store_tool_event
-from scripts.runtime_policy import local_models_allowed, runtime_summary, update_runtime
+from scripts.runtime_policy import INTELLIGENCE_LEVELS, local_models_allowed, runtime_summary, update_runtime
 from scripts.setup_manager import (
     accessibility_status,
+    approve_model_downloads,
+    decline_model_downloads,
     full_disk_access_status,
     open_accessibility_settings,
     open_full_disk_access_settings,
@@ -49,6 +53,19 @@ CLIENT_UPLOADS: dict[int, list[dict[str, Any]]] = {}
 RUN_LOCK = asyncio.Lock()
 SETUP_LOCK = asyncio.Lock()
 LAST_RESULT: dict[str, Any] = {}
+
+
+def _ci_mode() -> bool:
+    return os.getenv("CI", "").strip().lower() in {"1", "true", "yes"} or os.getenv(
+        "GITHUB_ACTIONS", ""
+    ).strip().lower() == "true"
+
+
+async def _setup_status(running: bool | None = None) -> dict[str, Any]:
+    status = await asyncio.to_thread(setup_status, lightweight=_ci_mode())
+    if running is not None:
+        status = {**status, "running": running}
+    return status
 
 
 def _safety_summary() -> dict[str, Any]:
@@ -276,8 +293,21 @@ async def _send_memory_snapshot(ws: WebSocketServerProtocol) -> None:
     await ws.send(json.dumps({"type": "memory", "data": recent}, ensure_ascii=False))
 
 
+async def _send_conversation_snapshot(ws: WebSocketServerProtocol | None = None) -> None:
+    try:
+        snapshot = await asyncio.to_thread(get_conversation_snapshot)
+    except Exception as exc:
+        logging.exception("Conversation snapshot failed")
+        snapshot = {"ok": False, "error": str(exc), "sessions": [], "context": {}}
+    payload = {"type": "conversation", "data": snapshot}
+    if ws is None:
+        await _broadcast(payload)
+    else:
+        await ws.send(json.dumps(payload, ensure_ascii=False))
+
+
 async def _send_setup_status(ws: WebSocketServerProtocol) -> None:
-    await ws.send(json.dumps({"type": "setup_status", "data": setup_status()}, ensure_ascii=False))
+    await ws.send(json.dumps({"type": "setup_status", "data": await _setup_status()}, ensure_ascii=False))
 
 
 async def _run_setup_flow() -> None:
@@ -295,7 +325,7 @@ async def _run_setup_flow() -> None:
             )
             future.result(timeout=10)
 
-        await _broadcast({"type": "setup_status", "data": {**setup_status(), "running": True}})
+        await _broadcast({"type": "setup_status", "data": await _setup_status(running=True)})
         try:
             status = await asyncio.to_thread(run_app_setup, emit)
             await _broadcast({"type": "setup_done", "data": status})
@@ -303,23 +333,65 @@ async def _run_setup_flow() -> None:
         except Exception as exc:
             logging.exception("Setup failed")
             await _broadcast({"type": "setup_error", "data": {"error": str(exc)}})
-            await _broadcast({"type": "setup_status", "data": {**setup_status(), "running": False}})
+            await _broadcast({"type": "setup_status", "data": await _setup_status(running=False)})
 
 
-async def _run_query(query: str, uploads: list[dict[str, Any]] | None = None, *, plan_only: bool = False) -> None:
+async def _run_query(
+    query: str,
+    uploads: list[dict[str, Any]] | None = None,
+    *,
+    plan_only: bool = False,
+    intelligence_level: str = "medium",
+    learn_step_by_step: bool = False,
+) -> None:
     global LAST_RESULT
 
     async with RUN_LOCK:
         await _broadcast({"type": "status", "data": {"state": "running"}})
+        thinking_lines: list[str] = []
+        conversation_context: dict[str, Any] = {"message_count": 0, "active_message_count": 0, "estimated_context_tokens": 0}
 
         async def _emit(event: dict[str, Any]) -> None:
+            if event.get("type") == "thinking":
+                thinking_lines.append(str(event.get("data") or ""))
             await _broadcast(event)
 
         try:
+            try:
+                conversation_context = await asyncio.to_thread(get_context_bundle)
+            except Exception as exc:
+                logging.exception("Conversation context load failed")
+                thinking_lines.append(f"Conversation context unavailable: {exc}")
+                await _broadcast({"type": "thinking", "data": f"Conversation context unavailable: {exc}"})
+            intelligence_line = (
+                f"Intelligence: {intelligence_level}"
+                f"{' · Learn Step-by-Step on' if learn_step_by_step else ''}"
+            )
+            thinking_lines.append(intelligence_line)
+            await _broadcast(
+                {
+                    "type": "thinking",
+                    "data": intelligence_line,
+                }
+            )
+            if conversation_context.get("message_count"):
+                context_line = (
+                    "Conversation context ready: "
+                    f"{conversation_context.get('message_count')} stored message(s), "
+                    f"{conversation_context.get('active_message_count')} active after compression"
+                )
+                thinking_lines.append(context_line)
+                await _broadcast({"type": "thinking", "data": context_line})
             if plan_only:
                 from scripts.workspace_agent import run_workspace_query
 
-                result = await run_workspace_query(query, uploads=uploads or [], emit_event=_emit, plan_only=True)
+                result = await run_workspace_query(
+                    query,
+                    uploads=uploads or [],
+                    emit_event=_emit,
+                    plan_only=True,
+                    conversation_context=conversation_context,
+                )
             elif local_models_allowed():
                 from scripts.long_term_memory import get_cached_answer
                 from scripts.orchestrator import run_research_query
@@ -327,7 +399,17 @@ async def _run_query(query: str, uploads: list[dict[str, Any]] | None = None, *,
                 cached = get_cached_answer(query)
                 if cached:
                     await _broadcast({"type": "thinking", "data": "Found cached answer, refreshing with live research"})
-                result = await run_research_query(query, emit_event=_emit)
+                research_query = query
+                if conversation_context.get("context_text"):
+                    research_query = (
+                        "Local conversation context, already compressed when needed:\n"
+                        f"{conversation_context['context_text']}\n\n"
+                        "Current user request:\n"
+                        f"{query}"
+                    )
+                result = await run_research_query(research_query, emit_event=_emit)
+                if isinstance(result, dict):
+                    result["query"] = query
                 try:
                     result["run_id"] = store_run(query, "research", result)
                 except Exception:
@@ -335,9 +417,42 @@ async def _run_query(query: str, uploads: list[dict[str, Any]] | None = None, *,
             else:
                 from scripts.workspace_agent import run_workspace_query
 
-                result = await run_workspace_query(query, uploads=uploads or [], emit_event=_emit)
+                result = await run_workspace_query(
+                    query,
+                    uploads=uploads or [],
+                    emit_event=_emit,
+                    conversation_context=conversation_context,
+                )
             LAST_RESULT = result
             await _broadcast({"type": "status", "data": {"state": "idle"}})
+            try:
+                answer = str(result.get("answer") or "") if isinstance(result, dict) else str(result)
+                sources = result.get("sources") if isinstance(result, dict) and isinstance(result.get("sources"), list) else []
+                conversation = await asyncio.to_thread(
+                    store_turn,
+                    query,
+                    answer,
+                    thinking=thinking_lines,
+                    sources=sources,
+                    metadata={
+                        "run_id": result.get("run_id") if isinstance(result, dict) else None,
+                        "mode": result.get("mode") if isinstance(result, dict) else "unknown",
+                        "plan_only": plan_only,
+                        "intelligence_level": intelligence_level,
+                        "learn_step_by_step": learn_step_by_step,
+                        "uploads": len(uploads or []),
+                    },
+                )
+                await _broadcast({"type": "conversation", "data": conversation})
+                if conversation.get("compressed_now"):
+                    await _broadcast(
+                        {
+                            "type": "thinking",
+                            "data": "Compressed older conversation context locally; recent turns stay active.",
+                        }
+                    )
+            except Exception:
+                logging.exception("Conversation history store failed")
             try:
                 from scripts.long_term_memory import list_recent_queries
 
@@ -363,6 +478,7 @@ async def _handle_ws(ws: WebSocketServerProtocol, path: str) -> None:
         try:
             await ws.send(json.dumps({"type": "status", "data": {"state": "idle"}}, ensure_ascii=False))
             await _send_memory_snapshot(ws)
+            await _send_conversation_snapshot(ws)
             await _send_setup_status(ws)
         except ConnectionClosed:
             return
@@ -380,16 +496,30 @@ async def _handle_ws(ws: WebSocketServerProtocol, path: str) -> None:
                 if isinstance(payload, dict):
                     query = str(payload.get("query") or payload.get("text") or "").strip()
                     plan_only = bool(payload.get("plan_only", False))
+                    intelligence_level = str(payload.get("intelligence_level") or "medium").strip().lower()
+                    if intelligence_level not in INTELLIGENCE_LEVELS:
+                        intelligence_level = "medium"
+                    learn_step_by_step = bool(payload.get("learn_step_by_step", False))
                     payload_uploads = payload.get("uploads")
                     if isinstance(payload_uploads, list):
                         uploads = payload_uploads
                 else:
                     query = str(payload).strip()
                     plan_only = False
+                    intelligence_level = "medium"
+                    learn_step_by_step = False
                 if not query:
                     await ws.send(json.dumps({"type": "thinking", "data": "Query cannot be empty"}))
                     continue
-                asyncio.create_task(_run_query(query, uploads=uploads, plan_only=plan_only))
+                asyncio.create_task(
+                    _run_query(
+                        query,
+                        uploads=uploads,
+                        plan_only=plan_only,
+                        intelligence_level=intelligence_level,
+                        learn_step_by_step=learn_step_by_step,
+                    )
+                )
             elif msg_type == "upload":
                 payload = msg.get("data") or {}
                 files = payload.get("files") if isinstance(payload, dict) else []
@@ -544,6 +674,20 @@ async def _handle_ws(ws: WebSocketServerProtocol, path: str) -> None:
                             updates["max_ram_gb"] = max(2.0, value)
                     if "auto_select_models" in payload:
                         updates["auto_select_models"] = bool(payload.get("auto_select_models"))
+                    if "max_gpu_percent" in payload:
+                        value = float(payload.get("max_gpu_percent"))
+                        if not math.isfinite(value):
+                            raise ValueError("max_gpu_percent must be a number")
+                        if value < 50 or value > 99:
+                            raise ValueError("max_gpu_percent must be between 50 and 99")
+                        updates["max_gpu_percent"] = round(value, 1)
+                    if "intelligence_level" in payload:
+                        value = str(payload.get("intelligence_level") or "medium").strip().lower()
+                        if value not in INTELLIGENCE_LEVELS:
+                            raise ValueError("intelligence_level must be xlow, low, medium, high, xhigh, or max")
+                        updates["intelligence_level"] = value
+                    if "learn_step_by_step" in payload:
+                        updates["learn_step_by_step"] = bool(payload.get("learn_step_by_step"))
                     if updates:
                         update_runtime(updates)
                     await ws.send(
@@ -628,6 +772,27 @@ async def _handle_ws(ws: WebSocketServerProtocol, path: str) -> None:
                     await ws.send(json.dumps({"type": "autonomy_mode", "data": {"mode": mode, "error": str(exc)}}))
             elif msg_type == "setup":
                 asyncio.create_task(_run_setup_flow())
+            elif msg_type == "model_downloads":
+                payload = msg.get("data") if isinstance(msg.get("data"), dict) else {}
+                action = str(payload.get("action") or "plan").strip().lower()
+                try:
+                    if action in {"approve", "download", "start"}:
+                        result = await asyncio.to_thread(approve_model_downloads)
+                        await ws.send(
+                            json.dumps({"type": "model_downloads", "data": {**result, "action": "approve"}}, ensure_ascii=False)
+                        )
+                        asyncio.create_task(_run_setup_flow())
+                    elif action in {"skip", "decline"}:
+                        result = await asyncio.to_thread(decline_model_downloads)
+                        await ws.send(json.dumps({"type": "model_downloads", "data": {**result, "action": "skip"}}, ensure_ascii=False))
+                        await ws.send(json.dumps({"type": "setup_status", "data": await _setup_status()}, ensure_ascii=False))
+                    else:
+                        await ws.send(json.dumps({"type": "setup_status", "data": await _setup_status()}, ensure_ascii=False))
+                except Exception as exc:
+                    await ws.send(
+                        json.dumps({"type": "model_downloads", "data": {"ok": False, "action": action, "error": str(exc)}}, ensure_ascii=False)
+                    )
+                    await ws.send(json.dumps({"type": "setup_status", "data": await _setup_status()}, ensure_ascii=False))
             elif msg_type == "permission":
                 payload = msg.get("data") if isinstance(msg.get("data"), dict) else {}
                 action = str(payload.get("action") or "check")
@@ -649,6 +814,25 @@ async def _handle_ws(ws: WebSocketServerProtocol, path: str) -> None:
                 await ws.send(json.dumps({"type": "result", "data": LAST_RESULT}, ensure_ascii=False))
             elif msg_type == "memory":
                 await _send_memory_snapshot(ws)
+            elif msg_type == "conversation":
+                await _send_conversation_snapshot(ws)
+            elif msg_type == "conversation_load":
+                payload = msg.get("data") if isinstance(msg.get("data"), dict) else {}
+                try:
+                    session_id = int(payload.get("session_id") or payload.get("id"))
+                    session = await asyncio.to_thread(get_session, session_id)
+                    await ws.send(json.dumps({"type": "conversation_session", "data": session}, ensure_ascii=False))
+                except Exception as exc:
+                    await ws.send(json.dumps({"type": "conversation_session", "data": {"ok": False, "error": str(exc)}}))
+            elif msg_type == "conversation_compact":
+                payload = msg.get("data") if isinstance(msg.get("data"), dict) else {}
+                try:
+                    session_id = int(payload.get("session_id") or 0) or None
+                    result = await asyncio.to_thread(force_compress_session, session_id)
+                    await ws.send(json.dumps({"type": "conversation_compacted", "data": result}, ensure_ascii=False))
+                    await _send_conversation_snapshot()
+                except Exception as exc:
+                    await ws.send(json.dumps({"type": "conversation_compacted", "data": {"ok": False, "error": str(exc)}}))
     finally:
         CLIENTS.discard(ws)
         CLIENT_UPLOADS.pop(id(ws), None)
@@ -737,7 +921,7 @@ async def _process_request(path: str, request_headers):
         )
 
     if request_path == "/api/setup":
-        payload = json.dumps(setup_status()).encode("utf-8")
+        payload = json.dumps(await _setup_status()).encode("utf-8")
         return (
             HTTPStatus.OK,
             [
@@ -748,10 +932,14 @@ async def _process_request(path: str, request_headers):
         )
 
     if request_path == "/api/permissions":
+        full_disk_access, accessibility = await asyncio.gather(
+            asyncio.to_thread(full_disk_access_status),
+            asyncio.to_thread(accessibility_status),
+        )
         payload = json.dumps(
             {
-                "full_disk_access": full_disk_access_status(),
-                "accessibility": accessibility_status(),
+                "full_disk_access": full_disk_access,
+                "accessibility": accessibility,
             }
         ).encode("utf-8")
         return (
@@ -832,6 +1020,17 @@ async def _process_request(path: str, request_headers):
             payload,
         )
 
+    if request_path == "/api/models/download-plan":
+        payload = json.dumps((await _setup_status()).get("model_download_plan", {})).encode("utf-8")
+        return (
+            HTTPStatus.OK,
+            [
+                ("Content-Type", "application/json"),
+                ("Content-Length", str(len(payload))),
+            ],
+            payload,
+        )
+
     if request_path == "/api/uploads":
         payload = json.dumps({"uploads": list_uploads()}).encode("utf-8")
         return (
@@ -884,6 +1083,17 @@ async def _process_request(path: str, request_headers):
             payload,
         )
 
+    if request_path == "/api/conversation":
+        payload = json.dumps(get_conversation_snapshot()).encode("utf-8")
+        return (
+            HTTPStatus.OK,
+            [
+                ("Content-Type", "application/json"),
+                ("Content-Length", str(len(payload))),
+            ],
+            payload,
+        )
+
     # Returning None allows websocket handshake paths to continue.
     return None
 
@@ -904,8 +1114,8 @@ async def _serve(host: str, port: int) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Locus UI WebSocket server")
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--host", default=os.getenv("LOCAL_COMPUTER_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.getenv("LOCAL_COMPUTER_PORT", "8765")))
     args = parser.parse_args()
     asyncio.run(_serve(args.host, args.port))
 

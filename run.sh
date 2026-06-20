@@ -4,7 +4,11 @@ set -euo pipefail
 AIDIR="$(cd "$(dirname "$0")" && pwd)"
 
 ensure_python3() {
-  if command -v python3 >/dev/null 2>&1; then
+  if command -v python3 >/dev/null 2>&1 && python3 - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 12) else 1)
+PY
+  then
     return
   fi
   if [ "$(uname -s)" = "Darwin" ]; then
@@ -16,8 +20,12 @@ ensure_python3() {
     fi
     hash -r
   fi
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "Python 3.11+ is required. Install Python and run Locus again."
+  if ! command -v python3 >/dev/null 2>&1 || ! python3 - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 12) else 1)
+PY
+  then
+    echo "Python 3.12+ is required. Install Python and run Locus again."
     exit 1
   fi
 }
@@ -64,11 +72,15 @@ export OLLAMA_MAX_LOADED_MODELS=1
 export OLLAMA_FLASH_ATTENTION=1
 export OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:-5m}"
 export TOKENIZERS_PARALLELISM=false
-export LOCAL_COMPUTER_MAX_GPU_PERCENT="${LOCAL_COMPUTER_MAX_GPU_PERCENT:-95}"
+export LOCAL_COMPUTER_MAX_GPU_PERCENT="${LOCAL_COMPUTER_MAX_GPU_PERCENT:-90}"
 export LOCAL_COMPUTER_ALLOW_EXTERNAL_AI="${LOCAL_COMPUTER_ALLOW_EXTERNAL_AI:-0}"
 export LOCAL_COMPUTER_ALLOW_CLOUD_WORKERS="${LOCAL_COMPUTER_ALLOW_CLOUD_WORKERS:-0}"
 export LOCAL_COMPUTER_SKIP_MODEL_VALIDATE="${LOCAL_COMPUTER_SKIP_MODEL_VALIDATE:-1}"
+export LOCAL_COMPUTER_AUTO_INSTALL_MODELS="${LOCAL_COMPUTER_AUTO_INSTALL_MODELS:-0}"
+export LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA="${LOCAL_COMPUTER_AUTO_INSTALL_OLLAMA:-0}"
 export PYTHONPATH="$AIDIR${PYTHONPATH:+:$PYTHONPATH}"
+export LOCAL_COMPUTER_HOST="${LOCAL_COMPUTER_HOST:-127.0.0.1}"
+export LOCAL_COMPUTER_PORT="$("$PYTHON3" "$AIDIR/scripts/networking.py" --host "$LOCAL_COMPUTER_HOST" --preferred "${LOCAL_COMPUTER_PORT:-8765}")"
 
 if [ -n "$PYTHON3" ]; then
   eval "$(
@@ -104,11 +116,6 @@ fi
 
 
 
-if lsof -ti:8765 >/dev/null 2>&1; then
-  echo "Kill existing server: lsof -ti:8765 | xargs kill"
-  exit 1
-fi
-
 VENV="$AIDIR/.venv"
 "$PYTHON3" "$AIDIR/scripts/setup_manager.py" --bootstrap
 
@@ -125,6 +132,6 @@ if [ "$#" -gt 0 ]; then
     python scripts/workspace_agent.py "$@"
   fi
 else
-  echo "[run] Starting dashboard server at http://127.0.0.1:8765"
-  python scripts/ui_server.py --host 127.0.0.1 --port 8765
+  echo "[run] Starting dashboard server at http://$LOCAL_COMPUTER_HOST:$LOCAL_COMPUTER_PORT"
+  python scripts/ui_server.py --host "$LOCAL_COMPUTER_HOST" --port "$LOCAL_COMPUTER_PORT"
 fi

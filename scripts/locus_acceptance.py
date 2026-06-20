@@ -71,6 +71,7 @@ def main() -> None:
 
     from scripts.plugin_runtime import execute_tool
     from scripts.setup_manager import setup_status
+    from scripts.conversation_history import get_context_bundle, store_turn
     from scripts.workspace_agent import run_workspace_query
     from scripts.workspace_planner import plan_workspace_task
 
@@ -80,6 +81,9 @@ def main() -> None:
         _assert(summary["plugins"] >= 10, "expected core plugin set")
         _assert(summary["declared_tools"] == summary["implemented_declared_tools"], "declared tools must be implemented")
         _assert(summary["pending_declared_tools"] == 0, "no pending plugin tools expected")
+        _assert(summary["connectors_needing_setup"] >= 2, "cloud connectors should be visible but unconfigured by default")
+        drive = next((item for item in result["plugins"] if item["id"] == "google_drive"), None)
+        _assert(drive is not None and not drive["status"]["configured"], "Google Drive should remain a credential-gated stub")
 
     def model_selection() -> None:
         result = execute_tool(
@@ -91,7 +95,7 @@ def main() -> None:
         budget = rec["resource_budget"]
         _assert(result["ok"], "model recommendation failed")
         _assert(budget["low_ram_mode"], "8 GB profile should use low RAM mode")
-        _assert(budget["gpu_limit_pct"] <= 95, "GPU cap should not exceed 95%")
+        _assert(budget["gpu_limit_pct"] == 90, "GPU cap should default to 90%")
         _assert(rec["pull_plan"] and all(item["command"].startswith("ollama pull ") for item in rec["pull_plan"]), "pull plan missing")
         windows = execute_tool(
             "workspace",
@@ -106,8 +110,8 @@ def main() -> None:
         )
         win_rec = windows["recommendation"]
         _assert(win_rec["gpu_acceleration"]["tier"] == "nvidia_laptop_8gb", "Windows RTX laptop tier not detected")
-        _assert("qwen3:32b" not in win_rec["recommended_models"], "8 GB VRAM laptop should not recommend 32B")
-        _assert(win_rec["roles"]["heavy"] == "qwen3:8b", "8 GB VRAM laptop should cap heavy work at 8B")
+        _assert("llama3.1:70b" not in win_rec["recommended_models"], "8 GB VRAM laptop should not recommend 70B")
+        _assert(win_rec["roles"]["heavy"] == "qwen2.5:14b", "8 GB VRAM laptop should cap heavy work at 14B")
 
     def workspace_and_planner() -> None:
         plan = plan_workspace_task("check this repo and show todos and git status")
@@ -146,6 +150,22 @@ def main() -> None:
         retrieved = execute_tool("memory", "retrieve_relevant_answers", {"query": "acceptance memory", "top_k": 1})
         _assert(retrieved["ok"] and retrieved["matches"], "memory retrieve failed")
 
+    def conversation_history() -> None:
+        for idx in range(16):
+            snapshot = store_turn(
+                f"Locus acceptance conversation turn {idx}",
+                "The deterministic answer keeps local history available without model inference.",
+                thinking=[f"acceptance thinking step {idx}-{step}" for step in range(4)],
+                metadata={"acceptance": True, "idx": idx},
+            )
+        context = get_context_bundle(session_id=snapshot["session_id"])
+        _assert(context["message_count"] >= 32, "conversation turns were not stored")
+        _assert(context["compression_active"], "long conversation should auto-compress")
+        _assert(context["summary"], "compressed conversation summary missing")
+        _assert(context["active_message_count"] <= context["thresholds"]["active_message_limit"], "active context was not bounded")
+        result = __import__("asyncio").run(run_workspace_query("show conversation history", conversation_context=context))
+        _assert("Local conversation context" in result["answer"], "workspace agent did not expose conversation context")
+
     def automations() -> None:
         created = execute_tool(
             "automations",
@@ -167,9 +187,24 @@ def main() -> None:
         _assert(status.get("wizard") and status["wizard"].get("cards"), "setup status missing setup wizard")
         _assert("full_disk" in steps, "setup status missing Full Disk Access")
         _assert("accessibility" in steps, "setup status missing Accessibility")
-        _assert("safety" in steps and "95" in steps["safety"]["detail"], "safety step should show 95% GPU cap")
-        blocked = execute_tool("shell", "run_command", {"command": "ollama run qwen3:0.6b", "timeout": 1})
+        _assert("safety" in steps and "90" in steps["safety"]["detail"], "safety step should show 90% GPU cap")
+        blocked = execute_tool("shell", "run_command", {"command": "ollama run qwen2.5:3b", "timeout": 1})
         _assert(not blocked["ok"] and blocked["shell_safety"]["blocked"], "model launch guard failed")
+
+    def frontend_model_free_ready() -> None:
+        status = setup_status()
+        steps = {step["id"]: step for step in status["steps"]}
+        _assert(steps["model_downloads"]["required"] is False, "model downloads must not block frontend readiness")
+        _assert(steps["model_downloads"]["state"] in {"warning", "done"}, "model downloads should ask permission without blocking frontend readiness")
+        plan = status.get("model_download_plan", {})
+        _assert(plan.get("model_count", 0) >= 1, "model download plan missing recommended models")
+        _assert(plan.get("total_size_gb", 0) > 0, "model download plan missing space estimate")
+        _assert("free_disk_gb" in plan, "model download plan missing free disk estimate")
+        _assert(steps["ollama"]["required"] is False, "Ollama must be optional while models are disabled")
+        wizard_text = json.dumps(status.get("wizard", {}))
+        _assert("works before Ollama" in wizard_text, "setup wizard must explain model-free frontend readiness")
+        _assert("space estimate" in wizard_text or "disk-space estimate" in wizard_text, "setup wizard must explain permissioned model download estimates")
+        _assert(os.environ.get("LOCAL_COMPUTER_AUTO_INSTALL_MODELS") == "0", "acceptance must keep automatic model downloads disabled")
 
     def browser() -> None:
         html = Path(state_home.name) / "browser.html"
@@ -194,8 +229,10 @@ def main() -> None:
         ("plan mode", plan_mode),
         ("uploads", uploads),
         ("memory", memory),
+        ("conversation history", conversation_history),
         ("automations", automations),
         ("safety and permissions", safety_and_permissions),
+        ("frontend model-free readiness", frontend_model_free_ready),
     ]
     if not args.skip_browser:
         cases.append(("local browser", browser))

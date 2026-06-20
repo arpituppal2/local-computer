@@ -137,7 +137,7 @@ def _model_summary() -> str:
             if budget.get("available_ram_gb") is not None
             else "Available RAM now: `unknown`"
         ),
-        f"GPU cap: `{budget.get('gpu_limit_pct', 95):.0f}%`",
+        f"GPU cap: `{budget.get('gpu_limit_pct', 90):.0f}%`",
         "",
         "| Role | Recommended model |",
         "| --- | --- |",
@@ -230,7 +230,30 @@ def _search_workspace(root: Path, query: str) -> str:
     return f"Search hits for `{needle}`:\n\n" + "\n".join(hits)
 
 
-def _default_answer(query: str, root: Path) -> str:
+def _conversation_summary(conversation_context: dict[str, Any] | None) -> str:
+    if not conversation_context:
+        return "No local conversation history is available yet."
+    summary = str(conversation_context.get("summary") or "").strip()
+    recent = conversation_context.get("recent_messages") if isinstance(conversation_context.get("recent_messages"), list) else []
+    lines = [
+        "Local conversation context",
+        "",
+        f"Messages stored: `{conversation_context.get('message_count', 0)}`",
+        f"Compressed context active: `{'yes' if conversation_context.get('compression_active') else 'no'}`",
+        f"Estimated active context: `{conversation_context.get('estimated_context_tokens', 0)}` tokens",
+    ]
+    if summary:
+        lines.extend(["", "Compressed summary:", "", summary])
+    if recent:
+        lines.extend(["", "Recent messages:", ""])
+        for item in recent[-8:]:
+            role = "User" if item.get("role") == "user" else "Locus"
+            preview = str(item.get("preview") or item.get("content") or "").strip()
+            lines.append(f"- {role}: {preview}")
+    return "\n".join(lines)
+
+
+def _default_answer(query: str, root: Path, conversation_context: dict[str, Any] | None = None) -> str:
     policy = runtime_summary()
     matches = plugins_for_goal(query)
     match_text = ", ".join(f"`{plugin.id}`" for plugin in matches) or "none"
@@ -240,6 +263,13 @@ def _default_answer(query: str, root: Path) -> str:
         tools = ", ".join(item.get("implemented", []))
         if tools:
             implemented.append(f"- `{plugin_id}`: {tools}")
+    context_note = ""
+    if conversation_context and conversation_context.get("message_count"):
+        context_note = (
+            "\n\nConversation context: "
+            f"{conversation_context.get('message_count')} stored message(s), "
+            f"{conversation_context.get('context_message_count', conversation_context.get('active_message_count'))} in active context."
+        )
     return (
         "Local models are disabled, so I handled this without Ollama inference.\n\n"
         "I can run deterministic plugin tools now: files, text search, git, shell commands, uploads, connector status, "
@@ -247,7 +277,8 @@ def _default_answer(query: str, root: Path) -> str:
         f"Workspace: `{root}`\n\n"
         f"Matched plugins: {match_text}\n\n"
         "Implemented tools:\n"
-        f"{chr(10).join(implemented)}\n\n"
+        f"{chr(10).join(implemented)}"
+        f"{context_note}\n\n"
         f"Runtime policy:\n\n```json\n{json.dumps(policy, indent=2)}\n```"
     )
 
@@ -403,12 +434,26 @@ async def run_workspace_query(
     uploads: list[dict[str, Any]] | None = None,
     emit_event: Emit | None = None,
     plan_only: bool = False,
+    conversation_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     root = workspace_root()
     normalized = query.lower()
 
     await _emit(emit_event, {"type": "thinking", "data": "Using model-free workspace mode"})
+    if conversation_context and conversation_context.get("message_count"):
+        mode = "compressed" if conversation_context.get("compression_active") else "recent"
+        await _emit(
+            emit_event,
+            {
+                "type": "thinking",
+                "data": (
+                    f"Loaded {mode} conversation context: "
+                    f"{conversation_context.get('message_count')} stored message(s), "
+                    f"{conversation_context.get('estimated_context_tokens', 0)} estimated tokens"
+                ),
+            },
+        )
 
     if uploads:
         await _emit(emit_event, {"type": "thinking", "data": f"Attached {len(uploads)} uploaded file(s)"})
@@ -472,14 +517,16 @@ async def run_workspace_query(
             results = await _execute_plan(plan, emit_event)
             answer = _render_tool_answer(plan, results)
     if not plan and not plan_only:
-        if re.search(r"\b(models?|hardware|ram|gpu|cpu|download)\b", normalized):
+        if re.search(r"\b(conversation|chat history|previous chat|what did we discuss|context summary)\b", normalized):
+            answer = _conversation_summary(conversation_context)
+        elif re.search(r"\b(models?|hardware|ram|gpu|cpu|download)\b", normalized):
             answer = _model_summary()
         elif "upload" in normalized or "attachment" in normalized:
             answer = _uploads_summary()
         elif normalized.startswith(("workspace", "repo summary")):
             answer = _workspace_summary(root)
         else:
-            answer = _default_answer(query, root)
+            answer = _default_answer(query, root, conversation_context)
 
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     result = {

@@ -14,6 +14,7 @@ ICON_DIR = ROOT / "assets" / "icons"
 MACOS_DIR = ICON_DIR / "macos"
 WINDOWS_DIR = ICON_DIR / "windows"
 ICONSET_DIR = ICON_DIR / "Locus.iconset"
+SOURCE_ICON = ICON_DIR / "locus-app-icon-source.png"
 
 
 def rounded_mask(size: int, radius: int) -> Image.Image:
@@ -178,12 +179,18 @@ def write_icns(icon: Image.Image) -> None:
         shutil.rmtree(ICONSET_DIR, ignore_errors=True)
 
 
+def source_or_generated_icon() -> Image.Image:
+    if SOURCE_ICON.exists():
+        return Image.open(SOURCE_ICON).convert("RGBA").resize((1024, 1024), Image.Resampling.LANCZOS)
+    write_svg()
+    return draw_locus_icon()
+
+
 def main() -> None:
     ICON_DIR.mkdir(parents=True, exist_ok=True)
     MACOS_DIR.mkdir(parents=True, exist_ok=True)
     WINDOWS_DIR.mkdir(parents=True, exist_ok=True)
-    icon = draw_locus_icon()
-    write_svg()
+    icon = source_or_generated_icon()
     write_pngs(icon)
     write_ico(icon)
     write_icns(icon)

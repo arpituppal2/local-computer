@@ -23,7 +23,7 @@ from scripts.runtime_policy import cloud_workers_allowed, external_ai_allowed
 
 _MODELS = effective_models_config()
 
-MODEL_PLANNER = _MODELS.get("planner", "qwen3:1.7b")
+MODEL_PLANNER = _MODELS.get("planner", "qwen2.5:3b")
 MODEL_HEAVY   = _MODELS.get("heavy",   MODEL_PLANNER)
 
 # If external AI is explicitly enabled, complexity_score >= this can route to chatbot UI.

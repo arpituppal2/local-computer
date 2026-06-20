@@ -15,14 +15,14 @@ from scripts.runtime_policy import local_models_allowed, skip_model_validation
 ROOT = Path(__file__).resolve().parent.parent
 _cfg = effective_models_config()
 
-MODEL_ORCHESTRATOR = _cfg.get("orchestrator", "qwen3:8b")
-MODEL_PLANNER = _cfg.get("planner", "qwen3:8b")
-MODEL_NAVIGATOR = _cfg.get("navigator", "qwen3:4b")
-MODEL_EXECUTOR = _cfg.get("executor", "qwen3:4b")
-MODEL_SYNTHESIZER = _cfg.get("synthesizer", "qwen3:8b")
-MODEL_CRITIC = _cfg.get("critic", "qwen3:4b")
+MODEL_ORCHESTRATOR = _cfg.get("orchestrator", "qwen2.5:14b")
+MODEL_PLANNER = _cfg.get("planner", "qwen2.5:14b")
+MODEL_NAVIGATOR = _cfg.get("navigator", "qwen2.5:3b")
+MODEL_EXECUTOR = _cfg.get("executor", "qwen2.5:3b")
+MODEL_SYNTHESIZER = _cfg.get("synthesizer", "qwen2.5:14b")
+MODEL_CRITIC = _cfg.get("critic", "qwen2.5:3b")
 MODEL_MEMORY = _cfg.get("memory", "nomic-embed-text")
-MODEL_ROUTER = _cfg.get("router", "qwen3:4b")
+MODEL_ROUTER = _cfg.get("router", "qwen2.5:3b")
 
 # Backward-compatible aliases used by older modules.
 MODEL_ACTOR = MODEL_NAVIGATOR
@@ -35,8 +35,9 @@ BASE_URL = _cfg.get("ollama_host", "http://localhost:11434")
 _TIMEOUTS = _cfg.get(
     "timeouts",
     {
-        "qwen3:4b": 45,
-        "qwen3:8b": 90,
+        "qwen2.5:3b": 45,
+        "qwen2.5:14b": 120,
+        "llama3.1:70b": 420,
         "nomic-embed-text": 45,
     },
 )

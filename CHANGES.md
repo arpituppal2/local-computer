@@ -1,5 +1,30 @@
 ## CHANGES.md
 
+### Production readiness pass
+- Added `scripts/release_check.py`, a model-free production gate covering JSON configs, plugin manifests, connector defaults, icon assets, shell/model launch guards, hardware model matrix, dashboard JavaScript, Python compilation, and the acceptance harness.
+- Added GitHub Actions release checks on macOS and Windows with local models, automatic model downloads, external AI, and cloud workers disabled.
+- Upgraded production runtime requirements and setup checks to Python 3.12+.
+- Added safe free-port selection through `scripts/networking.py`; launchers now choose the first free localhost port instead of killing or failing on an occupied `8765`.
+- Updated connector readiness so browser workflows are visible but do not count as configured cloud credentials.
+
+### True Locus identity and local intelligence controls
+- Replaced the in-app mark and generated macOS/Windows icon exports with the supplied blue-and-gold glass orbital Locus icon.
+- Added a dashboard Intelligence slider (`xlow` through `max`), Learn Step-by-Step toggle, and Settings feature-gate summary for Browser Control, uploads/artifacts, Deep Research, and Model Council.
+- Added a first-run shortcut rehearsal for double-Command summon and fn voice handoff without starting either action.
+- Changed the default compute cap from 95% to 90%, exposed 50-99% settings control, and warn below 75% or above 90%.
+- Updated local model tiers to `qwen2.5:3b`, `qwen2.5:14b`, and `llama3.1:70b` with model-free verification still safe by default.
+- Added off-by-default cloud connector stubs for GitHub, Google Drive, Gmail, and Outlook in `configs/cloud_connectors.json`, plus a Google Drive plugin readiness card.
+
+### Active control safety aura
+- Added a glassy full-surface control veil for browser, app, and system control states, with live cursor motion, click rings, a trail, and a clear do-not-touch status pill.
+- Wired browser and shell tool lifecycle events to automatically show and dismiss the control veil while local control is running.
+- Exposed `window.locusControlVeil` hooks so native app-control surfaces can drive the same motion/click/aura layer.
+
+### Reference-grade Mac setup and taskbar
+- Reworked the native setup surface to cycle through full-screen desktop-style scenes for shortcut, taskbar, local files, app control, context awareness, voice mode, capabilities, security, and model orchestration.
+- Collapsed first-run setup progress into a compact bottom rail so install/check status stays visible without making the setup feel like a normal app window.
+- Refined the summon overlay into a single floating glass taskbar with a Locus mark, large `Start a task...` input, plus affordance, and icon-only context tools.
+
 ### Cinematic first-run setup
 - Rebuilt first-run setup as a full-screen translucent desktop surface with staged launch, hotkey, command bar, voice, and local-first moments.
 - Switched the dashboard to local Apple system fonts and removed CDN font/script dependencies from the app shell.
@@ -44,8 +69,8 @@
 
 ### Beginner-first app safety
 - Added a plain-language dashboard resource warning telling users it is highly recommended not to use other apps while Locus is running.
-- Added `max_gpu_percent` runtime policy with a default 95% cap, surfaced through setup status, model recommendations, and dashboard computer-fit text.
-- Exported `LOCAL_COMPUTER_MAX_GPU_PERCENT=95` and `PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.95` from launchers and resource policy.
+- Added `max_gpu_percent` runtime policy with a default 90% cap, surfaced through setup status, model recommendations, and dashboard computer-fit text.
+- Exported `LOCAL_COMPUTER_MAX_GPU_PERCENT=90` and `PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.90` from launchers and resource policy.
 - Simplified dashboard labels for non-technical users: tools, files, this folder, recent runs, references, computer fit, and setup wording.
 
 ### First-time setup flow
@@ -112,10 +137,10 @@
 
 ### configs/models.json
 - Replaced role mappings with Apple Silicon-safe model assignments:
-  - orchestrator/planner/synthesizer: `qwen3:8b`
-  - navigator/executor/critic/router: `qwen3:4b`
+  - orchestrator/planner/synthesizer: `qwen2.5:14b`
+  - navigator/executor/critic/router: `qwen2.5:3b`
   - memory: `nomic-embed-text`
-- Removed larger-model assignments and retained only 4b/8b memory-safe tags.
+- Removed larger-model assignments and retained memory-safe 3B/14B defaults.
 
 ### scripts/ollama_client.py
 - Rebuilt the client to centralize model roles and compatibility aliases.
@@ -184,7 +209,7 @@
   - `TOKENIZERS_PARALLELISM=false`
 - Added fail-fast preflight checks with required messages for:
   - missing Ollama in PATH
-  - missing `qwen3:8b`
+  - missing `qwen2.5:14b`
   - missing `nomic-embed-text`
   - occupied port `8765`
 - Kept venv/dependency/bootstrap behavior and switched default no-arg run mode to UI server launch.
@@ -194,12 +219,12 @@
 - Reason: required to implement true WebSocket server endpoints (`/` and `/stream`) and live token/source/thinking streaming.
 
 ### scripts/cloud_dispatcher.py
-- Removed larger-model default fallback and aligned heavy fallback to `qwen3:8b`.
+- Removed larger-model default fallback and aligned heavy fallback to `qwen2.5:14b`.
 - Fixed local dispatch JSON call argument order (`call_json(prompt, model=...)`).
 
 ### scripts/subagents.py
-- Removed larger-model fallback and aligned to `qwen3:8b` max default.
-- Updated memory threshold comments/logic to match 8b-heavy routing assumptions.
+- Removed larger-model fallback and aligned to `qwen2.5:3b` safe default.
+- Updated memory threshold comments/logic to match staged 3B/14B routing assumptions.
 
 ### scripts/ollama_hybrid.py
 - Simplified wrapper to local Ollama path only with 4096 context and Apple Silicon-friendly options.
